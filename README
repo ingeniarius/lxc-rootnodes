@@ -1,0 +1,4 @@
+LXC manager
+
+Needed packages:
+aptitude install libtie-ixhash-perl libfile-path-perl
