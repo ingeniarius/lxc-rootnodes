@@ -15,6 +15,7 @@ use File::Basename qw(basename);
 use Tie::File;
 use Tie::IxHash;
 use Data::Dumper;
+use Cwd;
 $|++;
 
 # configuration
@@ -32,10 +33,11 @@ my $lvm = {
 };
 
 my $lxc = {
-	network => '10.10.0.0', # w/o netmask 
-	system  => 'rw',        # type of system container
-	user    => 'ro',        # type of user   container
-	log     => 'INFO'       # log priority
+	network => '10.10.10.0', # w/o netmask 
+	system  => 'rw',         # type of system container
+	user    => 'ro',         # type of user   container
+	log     => 'INFO',       # log priority
+	daemon  => 1             # daemonize lxc-start
 };
 
 my $template = {
@@ -65,7 +67,7 @@ if(@ARGV >= 2) {
 		}
 	}
 	$type = 'user' unless defined $type;
-	$lxc->{type} = $type || 'user';
+	$lxc->{type} = $type;
 
 	# directories and files
 	$dir->{container}        = join('/', $dir->{$lxc->{type}},       $container);
@@ -149,14 +151,12 @@ sub create {
 	} else {
 		mkdir($dir->{rootfs}) or die;
 		chdir($dir->{rootfs}) or die;
-		for(qw(bin dev etc lib sbin usr)) {
+		for(qw(bin dev etc lib sbin usr var)) {
 			my $dst = $_;
 			my $src = join('/', $dir->{tmpl_rootfs}, $dst);
 			mkdir($dst) or die;
 		}
-		for(qw( proc sys home 
-		        var/cache var/lib var/log var/run 
-		        var/spool/cron)) {
+		for(qw(proc sys home root)) {
 			make_path($_) or die;
 		}
 		symlink('lib','lib64');
@@ -167,6 +167,7 @@ sub create {
 		symlink('home/tmp','tmp') or die;
 		chmod 01777, 'home/tmp';
 		chmod 0711, 'home';
+		chmod 0700, 'root';
 		system("umount /dev/mapper/".join('-', $lvm->{vg}, $container)); die $! if $?;
 	}
 
@@ -221,7 +222,7 @@ sub remove {
 		remove_tree($dir->{container});
 	}
 
-	if($lvm->{remove} == 1) {
+	if($lvm->{remove}) {
 		my $lv = join('/', $lvm->{vg}, $container);
 		system("lvchange -an $lv"); die $! if $?;
 		system("lvremove $lv");     die $! if $?;
@@ -283,8 +284,11 @@ sub start {
 			
 	&umount($container);
 	&mount($container);
+
+	my $daemon = '';
+	   $daemon = '-d' if $lxc->{daemon};
 	
-	system("lxc-start -n " . $container . " -f conf -o log -l $lxc->{log}");
+	system("lxc-start -n " . $container . " -f conf -o log -l $lxc->{log} $daemon");
 	exit 0;
 }
 
@@ -303,7 +307,7 @@ sub help {
 	     ."       $0 template <name>\n\n";
 
 	# list of containers
-	my %container;
+	tie my %container, "Tie::IxHash";
 	foreach my $type ('user', 'system') {
 		my $file = join('/',$dir->{$type},'*','id');
 		for(glob($file)) {
@@ -318,9 +322,14 @@ sub help {
 	print "\033[1;32mCONTAINERS\033[0m\n";
 	if(%container) {
 		foreach my $type (keys %container) {
-			my %name = %{$container{$type}};
 			print "\t\033[1m$type:\033[0m\n\t\t";  
-			print join(', ', map { "\033[1;34m" . $name{$_} . "\033[0m (" . $_ . ')' } keys %name);
+			my %name = %{$container{$type}};
+			my $i;
+			for(keys %name) {
+				$i++;
+				print "\033[1;34m" . $name{$_} . "\033[0m (" . $_ . '), ';
+				print "\n\t\t" unless $i % 3;
+			}
 			print "\n";
 		}
 	} else {
@@ -332,7 +341,8 @@ sub help {
 
 sub is_running {
 	my $container = shift;
-	my %running = map { $_ => 1 } `lxc-ls -1`;
+	my @ls = `lxc-ls -1`; chomp @ls;
+	my %running = map { $_ => 1 } @ls;
 	if(defined $running{$container}) {
 		die "Container (".$container.") still running! Stop the container first.";
 	} 
@@ -361,7 +371,7 @@ sub mount {
 	my($container) = @_;
 	my $cwd = cwd();
 	chdir $dir->{rootfs} or die;
-	my @dirs = qw(bin dev etc lib sbin usr);
+	my @dirs = qw(bin dev etc lib sbin usr var);
 	for(@dirs) {
 		my $dst = $_;
 		my $src = join('/', $dir->{tmpl_rootfs}, $dst);
