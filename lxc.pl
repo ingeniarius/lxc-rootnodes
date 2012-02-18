@@ -28,16 +28,16 @@ my $dir = {
 
 my $lvm = {
 	vg     => 'lxc',        # volume name
-	size   => '10G',        # volume size
+	size   => '2G',         # volume size
 	remove => 1             # WARNING! User's /home partition will be removed.
 };
 
 my $lxc = {
-	network => '10.10.10.0', # w/o netmask 
+	network => '10.1.0.0',   # w/o netmask 
 	system  => 'rw',         # type of system container
 	user    => 'ro',         # type of user   container
 	log     => 'INFO',       # log priority
-	daemon  => 1             # daemonize lxc-start
+	daemon  => 0             # daemonize lxc-start
 };
 
 my $template = {
@@ -151,11 +151,6 @@ sub create {
 	} else {
 		mkdir($dir->{rootfs}) or die;
 		chdir($dir->{rootfs}) or die;
-		for(qw(bin dev etc lib sbin usr var)) {
-			my $dst = $_;
-			my $src = join('/', $dir->{tmpl_rootfs}, $dst);
-			mkdir($dst) or die;
-		}
 		for(qw(proc sys home root)) {
 			make_path($_) or die;
 		}
@@ -168,6 +163,19 @@ sub create {
 		chmod 01777, 'home/tmp';
 		chmod 0711, 'home';
 		chmod 0700, 'root';
+		
+		# create and copy directories
+		for(qw(bin dev etc lib sbin usr var)) {
+			if($lxc->{type} eq 'user' and $_ =~ /^(etc|var)$/){
+				# rw dirs
+				my $src = join('/', $dir->{tmpl_rootfs}, $_);
+				my $dst = join('/', 'home', $_);
+				system("cp -pr $src $dst");
+				die $! if $?;
+			}
+			mkdir($_) or die;
+		}
+
 		system("umount /dev/mapper/".join('-', $lvm->{vg}, $container)); die $! if $?;
 	}
 
@@ -370,22 +378,38 @@ sub umount {
 sub mount {
 	my($container) = @_;
 	my $cwd = cwd();
+	my $type = $lxc->{type};
 	chdir $dir->{rootfs} or die;
-	my @dirs = qw(bin dev etc lib sbin usr var);
-	for(@dirs) {
+
+	# mount home
+	system("mount /dev/mapper/" . join('-', $lvm->{vg}, $container) . " home"); 
+	die $! if $?;
+
+	# mount dirs
+	for(qw(bin dev etc lib sbin usr var)) {
 		my $dst = $_;
-		my $src = join('/', $dir->{tmpl_rootfs}, $dst);
+		my $src;
+		if($lxc->{type} eq 'user' and $dst =~ /^(etc|var)$/) {
+			# rw dirs
+			$src = join('/', $dir->{rootfs}, 'home', $dst);
+		} else {
+			$src = join('/', $dir->{tmpl_rootfs}, $dst);
+		}
+
 		if(! -d $dst) {
 			die "Directory (".$dst.") does NOT exist.";
 		}
 		system("mount --bind $src $dst");   
 		die $! if $?;
+
 		if($lxc->{$type} =~ /^(ro|read-?only)$/) {
-			system("mount -o remount,ro $dst"); 
-			die $! if $?;
+			unless ($lxc->{type} eq 'user' and $dst =~ /^(etc|var)$/) {	
+				system("mount -o remount,ro $dst"); 
+				die $! if $?;
+			}
 		}
 	}
-	system("mount /dev/mapper/" . join('-', $lvm->{vg}, $container) . " home"); die $! if $?;
+		
 	chdir $cwd;
 	return 1;
 }
