@@ -37,14 +37,18 @@ my $lxc = {
 	system  => 'rw',         # type of system container
 	user    => 'ro',         # type of user   container
 	log     => 'INFO',       # log priority
-	daemon  => 0             # daemonize lxc-start
+	daemon  => 1             # daemonize lxc-start
 };
 
 my $template = {
 	debian  => 'squeeze',
 	repo    => 'http://ftp.fr.debian.org/debian',
-	lxc     => 'lxc.conf'
+	lxc     => 'lxc.conf',
+	key	=> '/root/.ssh/id_rsa.pub'
 };
+
+# env
+$lvm->{size} = $ENV{LVM_SIZE} if defined $ENV{LVM_SIZE};
 
 # main
 my($command, $container, $id, $type);
@@ -55,7 +59,7 @@ if(@ARGV >= 2) {
 	foreach my $key (keys %$dir) {
 		unless(-d $dir->{$key}) {
 			die ucfirst($key)." directory (".$dir->{$key}.") does NOT exist.\n" 
-			  . "Change configuration or create directories first."
+			  . "Change configuration or create directories first.\n"
 		}
 	}
 	
@@ -129,7 +133,7 @@ sub create {
 	my %vgs = map { $_ => 1 } split(/,/, $vgs);
 
 	if(not defined $vgs{$lvm->{vg}}) {
-		die "VG (".$lvm->{vg}.") does NOT exist. Check configuration and LVM.";
+		die "VG (".$lvm->{vg}.") does NOT exist. Check configuration and LVM.\n";
 	}
 	
 	my $lvs = `lvs -olv_name --noheading --rows --unbuffered --aligned --separator=,`;
@@ -147,11 +151,11 @@ sub create {
 	
 	# rootfs
 	if(! -d $dir->{tmpl_rootfs}) {
-		die "Template rootfs (".$dir->{tmpl_rootfs}.") does NOT exist.";
+		die "Template rootfs (".$dir->{tmpl_rootfs}.") does NOT exist.\n";
 	} else {
 		mkdir($dir->{rootfs}) or die;
 		chdir($dir->{rootfs}) or die;
-		for(qw(proc sys home root)) {
+		for(qw(proc sys home)) {
 			make_path($_) or die;
 		}
 		symlink('lib','lib64');
@@ -165,7 +169,7 @@ sub create {
 		chmod 0700, 'root';
 		
 		# create and copy directories
-		for(qw(bin dev etc lib sbin usr var)) {
+		for(qw(bin dev etc root lib sbin usr var)) {
 			if($lxc->{type} eq 'user' and $_ =~ /^(etc|var)$/){
 				# rw dirs
 				my $src = join('/', $dir->{tmpl_rootfs}, $_);
@@ -190,11 +194,11 @@ sub create {
 	}	
 	
 	if($i < 1) {
-		die "Wrong network address (".$lxc->{network}."). Check configuration."
+		die "Wrong network address (".$lxc->{network}."). Check configuration.\n"
 	}	
 	
 	if(length($id) > $i*2) {
-		die "ID $id too big for specified network (".$lxc->{network}."). Check configuration.";
+		die "ID $id too big for specified network (".$lxc->{network}."). Check configuration.\n";
 	}
 
 	my $netmask = 32 - 8*$i;
@@ -203,8 +207,10 @@ sub create {
 		$ipaddr[-$j] = substr($id, -2*$j, 2) || 0;
 	}
 
+	my $hostname = `hostname --fqdn`;
+	my($server, $domain) = $hostname =~ /^(\w+?)\d+\.([\w.]+)$/;
 	open(CONF,'>','lxc.conf');
-	print CONF "lxc.utsname = " . $container     . "\n"
+	print CONF "lxc.utsname = " . join('.', $server, $container, $domain) . "\n"
 	         . "lxc.rootfs = "  . $dir->{rootfs} . "\n"
 	         . "lxc.mount = "   . $dir->{fstab}  ."\n"
 	         . "lxc.network.hwaddr = 00:FF:" . join(':', map { sprintf('%02d', $_) } @ipaddr) . "\n"
@@ -244,16 +250,16 @@ sub start {
 	
 	# container directory
 	if(! -d $dir->{container}) {
-		die "Container directory (".$dir->{container}.") does NOT exist. Cannot start.";
+		die "Container directory (".$dir->{container}.") does NOT exist. Cannot start.\n";
 	} else {
 		chdir $dir->{container} or die;
 	}
 	
 	# conf
 	if(! -f $dir->{tmpl_conf}) {
-		die "lxc.conf template (".$dir->{tmpl_conf}.") does NOT exist.";
+		die "lxc.conf template (".$dir->{tmpl_conf}.") does NOT exist.\n";
 	} elsif(! -f 'lxc.conf') {
-		die "Container configuration file lxc.conf does NOT exist.";
+		die "Container configuration file lxc.conf does NOT exist.\n";
 	} else {
 		unlink('log');
 		copy($dir->{tmpl_conf}, 'conf') or die;
@@ -352,7 +358,7 @@ sub is_running {
 	my @ls = `lxc-ls -1`; chomp @ls;
 	my %running = map { $_ => 1 } @ls;
 	if(defined $running{$container}) {
-		die "Container (".$container.") still running! Stop the container first.";
+		die "Container (".$container.") still running! Stop the container first.\n";
 	} 
 	return 1;
 }
@@ -386,7 +392,7 @@ sub mount {
 	die $! if $?;
 
 	# mount dirs
-	for(qw(bin dev etc lib sbin usr var)) {
+	for(qw(bin dev etc root lib sbin usr var)) {
 		my $dst = $_;
 		my $src;
 		if($lxc->{type} eq 'user' and $dst =~ /^(etc|var)$/) {
@@ -397,7 +403,7 @@ sub mount {
 		}
 
 		if(! -d $dst) {
-			die "Directory (".$dst.") does NOT exist.";
+			die "Directory (".$dst.") does NOT exist.\n";
 		}
 		system("mount --bind $src $dst");   
 		die $! if $?;
@@ -416,10 +422,10 @@ sub mount {
 
 sub template {
 	my($self, $container) = @_;
-	chdir($dir->{template}) or die "Cannot access template directory (".$dir->{template}.").";
+	chdir($dir->{template}) or die "Cannot access template directory (".$dir->{template}.").\n";
 
 	if(-d $template->{container}) {
-		die "Template container (".$template->{container}.") already exists.";
+		die "Template container (".$template->{container}.") already exists.\n";
 	} else {
 		mkdir($template->{container}, 0700) or die;
 		chdir($template->{container});
@@ -462,16 +468,25 @@ sub template {
 	
 	system("cp -pr " . $template->{debootstrap} . " " . $template->{rootfs});
 	die $! if $?;
-	
+
+	# ssh key
+	if(! -f $template->{key}) {
+		die "Cannot find SSH public key (".$template->{key}."). Run 'ssh -b 4096 -t rsa' command.\n";
+	} else {
+		my $ssh_dir = join('/', $template->{rootfs}, 'root/.ssh');
+		make_path($ssh_dir, { mode => 0700 }) or die;
+		copy($template->{key}, $ssh_dir . '/' . 'authorized_keys');
+	}
+
 	# run chroot scripts
 	for ('chroot', $lxc->{type}, $container) {
 		my $file = join('/', $template->{tmpl_chroot}, $_ . '.sh');
-		if($file eq 'chroot.sh' and ! -f $file) {
-			die "Cannot find chroot script (".$template->{chroot}."/$file). Check configuration.";
+		if($file =~ /\/chroot.sh$/ and ! -f $file) {
+			die "Cannot find chroot script (".$file."). Check configuration.\n";
 		} elsif(-f $file) {
 			print "Running chroot script $file...\n"; sleep 2;
 			copy($file, $template->{rootfs}) or die;
-			system("chroot ".$template->{rootfs}." /bin/bash /" . basename($file));
+			system('chroot '.$template->{rootfs}.' /bin/bash /' . basename($file) . ' ' . $container);
 			die $! if $?;
 			unlink($template->{rootfs} . '/' . basename($file));
 		} else {

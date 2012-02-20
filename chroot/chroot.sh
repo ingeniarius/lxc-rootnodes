@@ -101,12 +101,12 @@ EOF
 # /etc/rc.local
 cat > /etc/rc.local<<EOF
 #!/bin/bash -e
-route add default gw 10.10.10.1
+route add default gw 10.1.0.1
 EOF
 
 # /etc/resolv.conf
 cat > /etc/resolv.conf<<EOF
-nameserver 127.0.0.1
+nameserver 213.186.33.99
 nameserver 8.8.8.8
 EOF
 
@@ -117,13 +117,7 @@ rm -rf /etc/network
 rm /etc/fstab /etc/hostname /etc/debian_version
 
 # Install system packages
-aptitude -q -y install locales vim htop less ssh screen dstat ifstat iotop ferm
-
-# add ferm 
-# add non-interactive mode
-
-# Install user packages
-aptitude -q -y install irssi 
+aptitude -q -y install locales vim htop less ssh screen dstat ifstat iotop apg
 
 # Set locale
 perl -e 's/^# (en_US.UTF-8 UTF-8|pl_PL ISO-8859-2|pl_PL.UTF-8 UTF-8|de_DE.UTF-8 UTF-8)/$1/g' -p -i /etc/locale.gen
@@ -133,3 +127,4 @@ export LANG=en_US.UTF-8
 
 # Cleanup
 aptitude clean
+aptitude autoclean
