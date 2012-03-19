@@ -49,6 +49,7 @@ my $template = {
 
 # env
 $lvm->{size} = $ENV{LVM_SIZE} if defined $ENV{LVM_SIZE};
+$lxc->{daemon} = $ENV{DAEMON} if defined $ENV{DAEMON};
 
 # main
 my($command, $container, $id, $type);
@@ -98,6 +99,15 @@ if(@ARGV >= 2) {
 } else {
 	&help;
 }
+
+sub ip {
+	my($self,$id) = @_;
+	my @ipaddr = &get_user_ip($id);	
+	pop @ipaddr;
+	print join('.', @ipaddr)."\n";
+	exit 0;
+}
+
 
 sub create {
 	my($self, $container, $id) = @_;
@@ -170,7 +180,7 @@ sub create {
 		
 		# create and copy directories
 		for(qw(bin dev etc root lib sbin usr var)) {
-			if($lxc->{type} eq 'user' and $_ =~ /^(etc|var)$/){
+			if($lxc->{type} eq 'user' and $_ =~ /^(var)$/){
 				# rw dirs
 				my $src = join('/', $dir->{tmpl_rootfs}, $_);
 				my $dst = join('/', 'home', $_);
@@ -186,27 +196,8 @@ sub create {
 	chdir($dir->{container});
 	
 	# lxc.conf 
-	my @ipaddr  = split(/\./, $lxc->{network});
-	my $i;
-	for(reverse @ipaddr) {
-		# find zeros in ip
-		$_ == 0 ? $i++ : last;
-	}	
-	
-	if($i < 1) {
-		die "Wrong network address (".$lxc->{network}."). Check configuration.\n"
-	}	
-	
-	if(length($id) > $i*2) {
-		die "ID $id too big for specified network (".$lxc->{network}."). Check configuration.\n";
-	}
-
-	my $netmask = 32 - 8*$i;
-	for(my $j=1; $j<=$i; $j++) {
-		# get two numbers from the right
-		$ipaddr[-$j] = substr($id, -2*$j, 2) || 0;
-	}
-
+	my @ipaddr = &get_user_ip($id);
+	my $netmask = pop @ipaddr;
 	my $hostname = `hostname --fqdn`;
 	my($server, $domain) = $hostname =~ /^(\w+?)\d+\.([\w.]+)$/;
 	open(CONF,'>','lxc.conf');
@@ -318,7 +309,8 @@ sub help {
 	     ."Usage: $0 start|stop <name>\n"
 	     ."       $0 create <name> <id> [<type>]\n"
 	     ."       $0 remove <name>\n"
-	     ."       $0 template <name>\n\n";
+	     ."       $0 template <name>\n"
+	     ."       $0 ip <id>\n\n";
 
 	# list of containers
 	tie my %container, "Tie::IxHash";
@@ -339,7 +331,7 @@ sub help {
 			print "\t\033[1m$type:\033[0m\n\t\t";  
 			my %name = %{$container{$type}};
 			my $i;
-			for(keys %name) {
+			for(sort { $a <=> $b } keys %name) {
 				$i++;
 				print "\033[1;34m" . $name{$_} . "\033[0m (" . $_ . '), ';
 				print "\n\t\t" unless $i % 3;
@@ -361,6 +353,32 @@ sub is_running {
 		die "Container (".$container.") still running! Stop the container first.\n";
 	} 
 	return 1;
+}
+
+sub get_user_ip {
+	my($id) = shift;
+	my @ipaddr  = split(/\./, $lxc->{network});
+	my $i;
+	for(reverse @ipaddr) {
+		# find zeros in ip
+		$_ == 0 ? $i++ : last;
+	}	
+	
+	if($i < 1) {
+		die "Wrong network address (".$lxc->{network}."). Check configuration.\n"
+	}	
+	
+	if(length($id) > $i*2) {
+		die "ID $id too big for specified network (".$lxc->{network}."). Check configuration.\n";
+	}
+
+	my $netmask = 32 - 8*$i;
+	for(my $j=1; $j<=$i; $j++) {
+		# get two numbers from the right
+		$ipaddr[-$j] = int substr($id, -2*$j, 2) || 0;
+	}
+	push @ipaddr, $netmask;
+	return @ipaddr;
 }
 
 sub umount {
@@ -388,14 +406,14 @@ sub mount {
 	chdir $dir->{rootfs} or die;
 
 	# mount home
-	system("mount /dev/mapper/" . join('-', $lvm->{vg}, $container) . " home"); 
+	system("mount -o nodev,nosuid,noexec /dev/mapper/" . join('-', $lvm->{vg}, $container) . " home"); 
 	die $! if $?;
 
 	# mount dirs
 	for(qw(bin dev etc root lib sbin usr var)) {
 		my $dst = $_;
 		my $src;
-		if($lxc->{type} eq 'user' and $dst =~ /^(etc|var)$/) {
+		if($lxc->{type} eq 'user' and $dst =~ /^(var)$/) {
 			# rw dirs
 			$src = join('/', $dir->{rootfs}, 'home', $dst);
 		} else {
@@ -405,11 +423,16 @@ sub mount {
 		if(! -d $dst) {
 			die "Directory (".$dst.") does NOT exist.\n";
 		}
-		system("mount --bind $src $dst");   
+
+		if($dst eq 'var') {
+			system("mount -o noexec,nodev,nosuid --bind $src $dst");
+		} else {
+			system("mount --bind $src $dst");   
+		}
 		die $! if $?;
 
 		if($lxc->{$type} =~ /^(ro|read-?only)$/) {
-			unless ($lxc->{type} eq 'user' and $dst =~ /^(etc|var)$/) {	
+			unless ($lxc->{type} eq 'user' and $dst =~ /^(var)$/) {	
 				system("mount -o remount,ro $dst"); 
 				die $! if $?;
 			}
