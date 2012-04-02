@@ -37,14 +37,19 @@ my $lxc = {
 	system  => 'rw',         # type of system container
 	user    => 'ro',         # type of user   container
 	log     => 'INFO',       # log priority
-	daemon  => 0             # daemonize lxc-start
+	daemon  => 1             # daemonize lxc-start
 };
 
 my $template = {
 	debian  => 'squeeze',
 	repo    => 'http://ftp.fr.debian.org/debian',
-	lxc     => 'lxc.conf'
+	lxc     => 'lxc.conf',
+	key	=> '/root/.ssh/id_rsa.pub'
 };
+
+# env
+$lvm->{size} = $ENV{LVM_SIZE} if defined $ENV{LVM_SIZE};
+$lxc->{daemon} = $ENV{DAEMON} if defined $ENV{DAEMON};
 
 # main
 my($command, $container, $id, $type);
@@ -55,7 +60,7 @@ if(@ARGV >= 2) {
 	foreach my $key (keys %$dir) {
 		unless(-d $dir->{$key}) {
 			die ucfirst($key)." directory (".$dir->{$key}.") does NOT exist.\n" 
-			  . "Change configuration or create directories first."
+			  . "Change configuration or create directories first.\n"
 		}
 	}
 	
@@ -95,6 +100,15 @@ if(@ARGV >= 2) {
 	&help;
 }
 
+sub ip {
+	my($self,$id) = @_;
+	my @ipaddr = &get_user_ip($id);	
+	pop @ipaddr;
+	print join('.', @ipaddr)."\n";
+	exit 0;
+}
+
+
 sub create {
 	my($self, $container, $id) = @_;
 	my $type = $lxc->{type};
@@ -129,7 +143,7 @@ sub create {
 	my %vgs = map { $_ => 1 } split(/,/, $vgs);
 
 	if(not defined $vgs{$lvm->{vg}}) {
-		die "VG (".$lvm->{vg}.") does NOT exist. Check configuration and LVM.";
+		die "VG (".$lvm->{vg}.") does NOT exist. Check configuration and LVM.\n";
 	}
 	
 	my $lvs = `lvs -olv_name --noheading --rows --unbuffered --aligned --separator=,`;
@@ -147,11 +161,11 @@ sub create {
 	
 	# rootfs
 	if(! -d $dir->{tmpl_rootfs}) {
-		die "Template rootfs (".$dir->{tmpl_rootfs}.") does NOT exist.";
+		die "Template rootfs (".$dir->{tmpl_rootfs}.") does NOT exist.\n";
 	} else {
 		mkdir($dir->{rootfs}) or die;
 		chdir($dir->{rootfs}) or die;
-		for(qw(proc sys home root)) {
+		for(qw(proc sys home)) {
 			make_path($_) or die;
 		}
 		symlink('lib','lib64');
@@ -165,8 +179,8 @@ sub create {
 		chmod 0700, 'root';
 		
 		# create and copy directories
-		for(qw(bin dev etc lib sbin usr var)) {
-			if($lxc->{type} eq 'user' and $_ =~ /^(etc|var)$/){
+		for(qw(bin dev etc root lib sbin usr var)) {
+			if($lxc->{type} eq 'user' and $_ =~ /^(var)$/){
 				# rw dirs
 				my $src = join('/', $dir->{tmpl_rootfs}, $_);
 				my $dst = join('/', 'home', $_);
@@ -182,29 +196,12 @@ sub create {
 	chdir($dir->{container});
 	
 	# lxc.conf 
-	my @ipaddr  = split(/\./, $lxc->{network});
-	my $i;
-	for(reverse @ipaddr) {
-		# find zeros in ip
-		$_ == 0 ? $i++ : last;
-	}	
-	
-	if($i < 1) {
-		die "Wrong network address (".$lxc->{network}."). Check configuration."
-	}	
-	
-	if(length($id) > $i*2) {
-		die "ID $id too big for specified network (".$lxc->{network}."). Check configuration.";
-	}
-
-	my $netmask = 32 - 8*$i;
-	for(my $j=1; $j<=$i; $j++) {
-		# get two numbers from the right
-		$ipaddr[-$j] = substr($id, -2*$j, 2) || 0;
-	}
-
+	my @ipaddr = &get_user_ip($id);
+	my $netmask = pop @ipaddr;
+	my $hostname = `hostname --fqdn`;
+	my($server, $domain) = $hostname =~ /^(\w+?)\d+\.([\w.]+)$/;
 	open(CONF,'>','lxc.conf');
-	print CONF "lxc.utsname = " . $container     . "\n"
+	print CONF "lxc.utsname = " . join('.', $server, $container, $domain) . "\n"
 	         . "lxc.rootfs = "  . $dir->{rootfs} . "\n"
 	         . "lxc.mount = "   . $dir->{fstab}  ."\n"
 	         . "lxc.network.hwaddr = 00:FF:" . join(':', map { sprintf('%02d', $_) } @ipaddr) . "\n"
@@ -244,16 +241,16 @@ sub start {
 	
 	# container directory
 	if(! -d $dir->{container}) {
-		die "Container directory (".$dir->{container}.") does NOT exist. Cannot start.";
+		die "Container directory (".$dir->{container}.") does NOT exist. Cannot start.\n";
 	} else {
 		chdir $dir->{container} or die;
 	}
 	
 	# conf
 	if(! -f $dir->{tmpl_conf}) {
-		die "lxc.conf template (".$dir->{tmpl_conf}.") does NOT exist.";
+		die "lxc.conf template (".$dir->{tmpl_conf}.") does NOT exist.\n";
 	} elsif(! -f 'lxc.conf') {
-		die "Container configuration file lxc.conf does NOT exist.";
+		die "Container configuration file lxc.conf does NOT exist.\n";
 	} else {
 		unlink('log');
 		copy($dir->{tmpl_conf}, 'conf') or die;
@@ -312,7 +309,8 @@ sub help {
 	     ."Usage: $0 start|stop <name>\n"
 	     ."       $0 create <name> <id> [<type>]\n"
 	     ."       $0 remove <name>\n"
-	     ."       $0 template <name>\n\n";
+	     ."       $0 template <name>\n"
+	     ."       $0 ip <id>\n\n";
 
 	# list of containers
 	tie my %container, "Tie::IxHash";
@@ -333,7 +331,7 @@ sub help {
 			print "\t\033[1m$type:\033[0m\n\t\t";  
 			my %name = %{$container{$type}};
 			my $i;
-			for(keys %name) {
+			for(sort { $a <=> $b } keys %name) {
 				$i++;
 				print "\033[1;34m" . $name{$_} . "\033[0m (" . $_ . '), ';
 				print "\n\t\t" unless $i % 3;
@@ -352,9 +350,35 @@ sub is_running {
 	my @ls = `lxc-ls -1`; chomp @ls;
 	my %running = map { $_ => 1 } @ls;
 	if(defined $running{$container}) {
-		die "Container (".$container.") still running! Stop the container first.";
+		die "Container (".$container.") still running! Stop the container first.\n";
 	} 
 	return 1;
+}
+
+sub get_user_ip {
+	my($id) = shift;
+	my @ipaddr  = split(/\./, $lxc->{network});
+	my $i;
+	for(reverse @ipaddr) {
+		# find zeros in ip
+		$_ == 0 ? $i++ : last;
+	}	
+	
+	if($i < 1) {
+		die "Wrong network address (".$lxc->{network}."). Check configuration.\n"
+	}	
+	
+	if(length($id) > $i*2) {
+		die "ID $id too big for specified network (".$lxc->{network}."). Check configuration.\n";
+	}
+
+	my $netmask = 32 - 8*$i;
+	for(my $j=1; $j<=$i; $j++) {
+		# get two numbers from the right
+		$ipaddr[-$j] = int substr($id, -2*$j, 2) || 0;
+	}
+	push @ipaddr, $netmask;
+	return @ipaddr;
 }
 
 sub umount {
@@ -382,14 +406,14 @@ sub mount {
 	chdir $dir->{rootfs} or die;
 
 	# mount home
-	system("mount /dev/mapper/" . join('-', $lvm->{vg}, $container) . " home"); 
+	system("mount -o nodev,nosuid,noexec /dev/mapper/" . join('-', $lvm->{vg}, $container) . " home"); 
 	die $! if $?;
 
 	# mount dirs
-	for(qw(bin dev etc lib sbin usr var)) {
+	for(qw(bin dev etc root lib sbin usr var)) {
 		my $dst = $_;
 		my $src;
-		if($lxc->{type} eq 'user' and $dst =~ /^(etc|var)$/) {
+		if($lxc->{type} eq 'user' and $dst =~ /^(var)$/) {
 			# rw dirs
 			$src = join('/', $dir->{rootfs}, 'home', $dst);
 		} else {
@@ -397,13 +421,18 @@ sub mount {
 		}
 
 		if(! -d $dst) {
-			die "Directory (".$dst.") does NOT exist.";
+			die "Directory (".$dst.") does NOT exist.\n";
 		}
-		system("mount --bind $src $dst");   
+
+		if($dst eq 'var') {
+			system("mount -o noexec,nodev,nosuid --bind $src $dst");
+		} else {
+			system("mount --bind $src $dst");   
+		}
 		die $! if $?;
 
 		if($lxc->{$type} =~ /^(ro|read-?only)$/) {
-			unless ($lxc->{type} eq 'user' and $dst =~ /^(etc|var)$/) {	
+			unless ($lxc->{type} eq 'user' and $dst =~ /^(var)$/) {	
 				system("mount -o remount,ro $dst"); 
 				die $! if $?;
 			}
@@ -416,10 +445,10 @@ sub mount {
 
 sub template {
 	my($self, $container) = @_;
-	chdir($dir->{template}) or die "Cannot access template directory (".$dir->{template}.").";
+	chdir($dir->{template}) or die "Cannot access template directory (".$dir->{template}.").\n";
 
 	if(-d $template->{container}) {
-		die "Template container (".$template->{container}.") already exists.";
+		die "Template container (".$template->{container}.") already exists.\n";
 	} else {
 		mkdir($template->{container}, 0700) or die;
 		chdir($template->{container});
@@ -462,16 +491,25 @@ sub template {
 	
 	system("cp -pr " . $template->{debootstrap} . " " . $template->{rootfs});
 	die $! if $?;
-	
+
+	# ssh key
+	if(! -f $template->{key}) {
+		die "Cannot find SSH public key (".$template->{key}."). Run 'ssh -b 4096 -t rsa' command.\n";
+	} else {
+		my $ssh_dir = join('/', $template->{rootfs}, 'root/.ssh');
+		make_path($ssh_dir, { mode => 0700 }) or die;
+		copy($template->{key}, $ssh_dir . '/' . 'authorized_keys');
+	}
+
 	# run chroot scripts
 	for ('chroot', $lxc->{type}, $container) {
 		my $file = join('/', $template->{tmpl_chroot}, $_ . '.sh');
-		if($file eq 'chroot.sh' and ! -f $file) {
-			die "Cannot find chroot script (".$template->{chroot}."/$file). Check configuration.";
+		if($file =~ /\/chroot.sh$/ and ! -f $file) {
+			die "Cannot find chroot script (".$file."). Check configuration.\n";
 		} elsif(-f $file) {
 			print "Running chroot script $file...\n"; sleep 2;
 			copy($file, $template->{rootfs}) or die;
-			system("chroot ".$template->{rootfs}." /bin/bash /" . basename($file));
+			system('chroot '.$template->{rootfs}.' /bin/bash /' . basename($file) . ' ' . $container);
 			die $! if $?;
 			unlink($template->{rootfs} . '/' . basename($file));
 		} else {
