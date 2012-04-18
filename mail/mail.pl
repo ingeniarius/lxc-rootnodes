@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 #
-# Mail sender 
+# Mail sender with simple template support
 # Rootnode, http://rootnode.net
 #
 # Copyright (C) 2012 Marcin Hlybin

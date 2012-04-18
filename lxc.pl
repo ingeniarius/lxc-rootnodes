@@ -11,10 +11,12 @@ use warnings;
 use strict;
 use File::Path     qw(make_path remove_tree);
 use File::Copy     qw(copy);
+use File::Copy::Recursive qw(dircopy);
 use File::Basename qw(basename);
 use Tie::File;
 use Tie::IxHash;
 use Data::Dumper;
+use Smart::Comments;
 use Cwd;
 $|++;
 
@@ -29,7 +31,7 @@ my $dir = {
 my $lvm = {
 	vg     => 'lxc',        # volume name
 	size   => '2G',         # volume size
-	remove => 1             # WARNING! User's /home partition will be removed.
+	remove => 0             # WARNING! User's /home partition will be removed.
 };
 
 my $lxc = {
@@ -48,8 +50,9 @@ my $template = {
 };
 
 # env
-$lvm->{size} = $ENV{LVM_SIZE} if defined $ENV{LVM_SIZE};
-$lxc->{daemon} = $ENV{DAEMON} if defined $ENV{DAEMON};
+$lvm->{remove} = 1              if defined $ENV{LVM_REMOVE};
+$lvm->{size}   = $ENV{LVM_SIZE} if defined $ENV{LVM_SIZE};
+$lxc->{daemon} = $ENV{DAEMON}   if defined $ENV{DAEMON};
 
 # main
 my($command, $container, $id, $type);
@@ -97,12 +100,12 @@ if(@ARGV >= 2) {
 
 	__PACKAGE__->$command($container, $id);
 } else {
-	&help;
+	help();
 }
 
 sub ip {
 	my($self,$id) = @_;
-	my @ipaddr = &get_user_ip($id);	
+	my @ipaddr = get_user_ip($id);	
 	pop @ipaddr;
 	print join('.', @ipaddr)."\n";
 	exit 0;
@@ -120,7 +123,7 @@ sub create {
 		print "Using container template from ".$dir->{tmpl}."\n";
 	}
 	
-	&is_running($container);
+	is_running($container);
 
 	# container directory
 	if(-d $dir->{container}) {
@@ -150,11 +153,11 @@ sub create {
 	   $lvs =~ s/\s+//g;
 	my %lvs = map { $_ => 1 } split(/,/, $lvs);
 
-	&umount($container);
+	umount($container);
 
 	if(not defined $lvs{$container}) {
 		system("lvcreate -L".$lvm->{size}." -n ".$container." ".$lvm->{vg}); die $! if $?;
-		system("mkfs.ext4 /dev/mapper/".$lvm->{vg}."-".$container);          die $! if $?;
+		system("mkfs.ext4 -q /dev/mapper/".$lvm->{vg}."-".$container);       die $! if $?;
 	} else {
 		warn "info: LVM volume exists (".$container.").\n";	
 	} 
@@ -196,7 +199,7 @@ sub create {
 	chdir($dir->{container});
 	
 	# lxc.conf 
-	my @ipaddr = &get_user_ip($id);
+	my @ipaddr = get_user_ip($id);
 	my $netmask = pop @ipaddr;
 	my $hostname = `hostname --fqdn`;
 	my($server, $domain) = $hostname =~ /^(\w+?)\d+\.([\w.]+)$/;
@@ -218,8 +221,8 @@ sub create {
 
 sub remove {
 	my($self, $container) = @_;
-	&is_running($container);
-	&umount($container);
+	is_running($container);
+	umount($container);
 	
 	if(! -d $dir->{container}) {
 		die "Container directory (".$dir->{container}.") does NOT exist.\n";
@@ -237,7 +240,7 @@ sub remove {
 
 sub start {
 	my($self, $container) = @_;
-	&is_running($container);
+	is_running($container);
 	
 	# container directory
 	if(! -d $dir->{container}) {
@@ -287,8 +290,9 @@ sub start {
 		untie @conf;
 	}
 			
-	&umount($container);
-	&mount($container);
+	umount($container);
+	mount($container);
+	etc($container);
 
 	my $daemon = '';
 	   $daemon = '-d' if $lxc->{daemon};
@@ -300,7 +304,7 @@ sub start {
 sub stop {
 	my($self, $container) = @_;
 	system("lxc-stop -n " . $container);
-	&umount($container);
+	umount($container);
 	exit 0;
 }
 
@@ -399,6 +403,55 @@ sub umount {
 	return 1;
 }
 
+sub etc {
+	my ($container) = @_;
+	my $cwd = cwd();
+		
+	# proceed only if user type
+	if ($lxc->{type} ne 'user') {
+		return;
+	}	
+	
+	# /etc paths
+	my $container_path = "$dir->{rootfs}/home/etc";
+	my $template_path  = "$dir->{tmpl_rootfs}/home/etc";
+	
+	# get files from container dir	
+	chdir $container_path or return;
+	my @container_files = glob('*');
+
+	# get files from template dir
+	chdir $template_path or die;
+	my @template_files = glob('*');
+
+	# strore container files as hashmap
+	my %in_container = map { $_ => 1 } @container_files;
+
+	### @container_files
+	### @template_files
+	
+	# compare arrays and copy lacking files
+	foreach my $file_name (@template_files) {
+		if (!$in_container{$file_name}) {
+			# is directory
+			if (-d "$template_path/$file_name") {
+				### directory: $file_name
+				dircopy("$template_path/$file_name", "$container_path/$file_name") 
+					or die "Cannot copy file $file_name: $!";
+			} 
+			# is file
+			else {
+				### file: $file_name
+				copy("$template_path/$file_name", "$container_path/$file_name") 
+					or die "Cannot copy file $file_name: $!";
+			}
+		}
+	}	
+	
+	chdir $cwd;
+	return; 
+}
+
 sub mount {
 	my($container) = @_;
 	my $cwd = cwd();
@@ -406,7 +459,7 @@ sub mount {
 	chdir $dir->{rootfs} or die;
 
 	# mount home
-	system("mount -o nodev,nosuid,noexec /dev/mapper/" . join('-', $lvm->{vg}, $container) . " home"); 
+	system("mount -o nodev,nosuid /dev/mapper/" . join('-', $lvm->{vg}, $container) . " home"); 
 	die $! if $?;
 
 	# mount dirs
