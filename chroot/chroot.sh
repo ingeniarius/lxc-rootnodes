@@ -3,7 +3,7 @@
 # LXC chroot script
 # Rootnode, http://rootnode.net
 #
-# Copyright (C) 2009-2011 Marcin Hlybin
+# Copyright (C) 2012 Marcin Hlybin
 # All rights reserved.
 #
 
