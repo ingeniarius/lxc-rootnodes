@@ -30,8 +30,8 @@ my $dir = {
 
 my $lvm = {
 	vg     => 'lxc',        # volume name
-	size   => '2G',         # volume size
-	remove => 0             # WARNING! User's /home partition will be removed.
+	size   => '6G',         # volume size
+	remove => 1             # WARNING! User's /home partition will be removed.
 };
 
 my $lxc = {
