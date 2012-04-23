@@ -1,21 +1,29 @@
 #Subject: Rootnode, konto na kontenerze web1 (%%user_name%%)
 Witaj,
 
-Twoje dane do logowania.
+Kontener Rootnode zaprasza szanownego Ciebie do testowania. 
 
-  host:       %%host%%
-  port:       %%port%%
+  host: %%host%%
+  port: %%port%%
 
-  użytkownik: %%user_name%%
-  hasło:      %%user_password%%
+  login: %%user_name%%
+  hasło: %%user_password%%	
 
-W celu zalogowania się użyj komendy ssh lub programu Putty:
-$ ssh -l %%user_name%% -p %%port%% %%host%%
+W celu zalogowania się użyj komendy ssh lub programu Putty.
 
-Po zalogowaniu:
-  
+ssh -l %%user_name%% -p %%port%% %%host%%
+
+Po zalogowaniu obowiązkowo:
+
 1. Wgraj klucz ssh do pliku ~/.ssh/authorized_keys.
-2. Zmień hasło za pomocą polecenie 'passwd'.
+2. Zmień hasło za pomocą polecenia 'passwd'.
+
+PAMIĘTAJ!
+NIGDY NIE ŁĄCZ SIĘ NA KONTENERY ZE STAREJ INFRASTRUKTURY
+ROOTNODE I NIE UŻYWAJ TYCH SAMYCH HASEŁ.
+
+O podstawach poruszania się w kontenerze poczytasz na
+http://rootnodestatus.net/?p=2271
 
 --
 Kochani administratorzy.

@@ -23,7 +23,7 @@ else
 fi
 
 # satan
-deluser_response=`satan admin deluser $user_name`
+deluser_response=`/usr/bin/perl client.pl admin deluser $user_name`
 
 # store response as arguments
 set -- $deluser_response

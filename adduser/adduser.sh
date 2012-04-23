@@ -20,6 +20,7 @@ usage() {
 host='web1.rootnode.net'
 type='web'
 lvm_size='6G'
+mailhub=10.1.0.11
 
 # optional arguments
 while getopts 'u:' opt
@@ -41,7 +42,7 @@ fi
 
 # Satan::Admin
 [ ! -z $uid ] && uid_param="uid $uid"
-adduser_response=`satan admin adduser $user_name $uid_param`
+adduser_response=`/usr/bin/perl client.pl admin adduser $user_name $uid_param`
 
 # store response as arguments
 set -- $adduser_response
@@ -78,6 +79,9 @@ user_dir="/lxc/users/$user_name/rootfs/home/$user_name"
 if [ ! -d $user_dir ]
 then 
 	mkdir $user_dir
+	mkdir $user_dir/etc
+	ln -s /etc/apache2 $user_dir/etc/apache2
+	ln -s /etc/nginx $user_dir/etc/nginx
 	chmod 711 $user_dir
 	chown $uid:$uid $user_dir
 fi
@@ -153,24 +157,54 @@ echo $user_name > "$lxc_dir/user"
 echo $ipaddr    > "$lxc_dir/ipaddr"
 echo $type      > "$lxc_dir/type"
 
+# ssmtp
+ssmtp_file="/lxc/users/$user_name/rootfs/home/etc/ssmtp/ssmtp.conf"
+[ -e "$ssmtp_file" ] && rm -- "$ssmtp_file"
+cat > $ssmtp_file <<-EOF
+	#
+	# Config file for sSMTP sendmail
+	#
+	# The person who gets all mail for userids < 1000
+	# Make this empty to disable rewriting.
+	root=postmaster
+
+	# The place where the mail goes. The actual machine name is required no 
+	# MX records are consulted. Commonly mailhosts are named mail.domain.com
+	mailhub=$mailhub
+
+	# Where will the mail seem to come from?
+	#rewriteDomain=
+
+	# The full hostname
+	hostname=$type.$user_name.rootnode.net
+
+	# Are users allowed to set their own From: address?
+	# YES - Allow the user to specify their own From: address
+	# NO - Use the system generated From: address
+	FromLineOverride=YES
+EOF
+
 # firewall
 ipaddr=`lxc ip $uid`
-cat > /etc/ferm/ferm.d/$uid <<-EOF
-	table filter {
-		chain FORWARD {
-			proto tcp destination $ipaddr dport 22 ACCEPT;
-			proto tcp destination $ipaddr dport 80 ACCEPT;
-		}
+cat > /etc/ferm/ferm.d/$uid <<EOF
+table filter {
+	chain FORWARD {
+		proto tcp destination $ipaddr dport 22 ACCEPT;
+		proto tcp destination $ipaddr dport 80 ACCEPT;
+		proto tcp destination $ipaddr dport ${uid}0:${uid}9 ACCEPT;
 	}
+}
 
-	table nat {
-		chain PREROUTING {
-			proto tcp destination 176.31.234.143 dport $uid DNAT to $ipaddr:22;
-			proto tcp destination 176.31.234.143 dport 1$uid DNAT to $ipaddr:80;
-		}
+table nat {
+	chain PREROUTING {
+		proto tcp destination \$PUBLIC_IP dport $uid DNAT to $ipaddr:22;
+		#proto tcp destination \$PUBLIC_IP dport 1$uid DNAT to $ipaddr:80;
+		proto tcp destination \$PUBLIC_IP dport ${uid}0:${uid}9 DNAT to $ipaddr:${uid}0-${uid}9;
 	}
+}
 EOF
 /etc/init.d/ferm reload
 
 # send e-mail
+cd ../mail
 /usr/bin/perl mail.pl -l pl -f templates/adduser.tmpl -t $mail user_name=$user_name user_password="$user_password $user_password_p" port=$uid host=$host 

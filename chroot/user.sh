@@ -7,6 +7,9 @@
 # All rights reserved.
 #
 
+# TODO
+# * disable rsyslog sendsigs_omit
+
 export LC_ALL=C
 export DEBIAN_FRONTEND=noninteractive
 USER=$1
@@ -22,7 +25,7 @@ aptitude -q -y install msmtp
 aptitude -q -y install irssi 
 
 # motd
-echo -e "Welcome back.\nRootnode from scratch." > /etc/motd
+echo -e "Rootnode from scratch." > /etc/motd
 
 # Cleanup
 aptitude clean
