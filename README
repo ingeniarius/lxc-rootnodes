@@ -1,4 +1,20 @@
 LXC manager
 
+Container types:
+
+ 1-20    web
+21-40    app
+41-60    shell
+61-80    shell
+81-100   torrent
+101-120  backup
+120-139
+140-159
+160-179
+180-199
+200-219
+
 Needed packages:
-aptitude install libtie-ixhash-perl libfile-path-perl
+aptitude install libtie-ixhash-perl libfile-path-perl libreadonly-perl debootstrap libtext-asciitable-perl bridge-utils lxc libdata-validate-ip-perl
+
+
