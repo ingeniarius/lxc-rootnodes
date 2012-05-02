@@ -699,7 +699,6 @@ sub update_etc_files {
 	return;
 }
 
-
 sub mount_shares {
 	my ($container_name, $mount_name) = @_;
 	$mount_name = '' if not defined $mount_name;
