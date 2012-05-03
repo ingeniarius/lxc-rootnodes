@@ -38,17 +38,17 @@ Readonly my $SERVER_CPUS     => get_server_info('cpus');    # Number of server p
 Readonly my $SERVER_KEY_FILE => '/root/.ssh/id_rsa.pub';    # Public SSH key for root access
 
 # LXC configuration
-Readonly my $LXC_DIR          => '/lxc';               # Main LXC directory
-Readonly my $LXC_TEMPLATE_DIR => "$LXC_DIR/template";  # Template directory
-Readonly my $LXC_REPO_DIR     => "$LXC_DIR/repo";      # Repository with this script and other tools
-Readonly my $LXC_NAME_MINLEN  => 2;                    # Minimum container name length
-Readonly my $LXC_NAME_MAXLEN  => 32;                   # Maximum container name length
-Readonly my $LXC_UID_MIN      => 2000;                 # Minimum UID
-Readonly my $LXC_UID_MAX      => 6500;                 # Maximum UID
-Readonly my $LXC_DEFAULT_TYPE => 'user';               # Default container type
-Readonly my $LXC_LOGLEVEL     => 'INFO';               # lxc-start log level
-Readonly my $LXC_NETWORK      => "10.$SERVER_ID.0.0";  # Network address w/o netmask
-Readonly my $LXC_DAEMON       => $ENV{DAEMON} || 1;    # Daemonize lxc-start process
+Readonly my $LXC_DIR          => '/lxc';                       # Main LXC directory
+Readonly my $LXC_TEMPLATE_DIR => "$LXC_DIR/template";          # Template directory
+Readonly my $LXC_REPO_DIR     => "$LXC_DIR/repo/lxc-manager";  # Repository path to this script and other tools
+Readonly my $LXC_NAME_MINLEN  => 2;                            # Minimum container name length
+Readonly my $LXC_NAME_MAXLEN  => 32;                           # Maximum container name length
+Readonly my $LXC_UID_MIN      => 2000;                         # Minimum UID
+Readonly my $LXC_UID_MAX      => 6500;                         # Maximum UID
+Readonly my $LXC_DEFAULT_TYPE => 'user';                       # Default container type
+Readonly my $LXC_LOGLEVEL     => 'INFO';                       # lxc-start log level
+Readonly my $LXC_NETWORK      => "10.$SERVER_ID.0.0";          # Network address w/o netmask
+Readonly my $LXC_DAEMON       => $ENV{DAEMON} || 1;            # Daemonize lxc-start process
 
 # LVM configuration
 Readonly my $LVM_REMOVE => $ENV{LVM_REMOVE} || 1;     # WARNING! Users's /home partition will be removed.
@@ -154,7 +154,7 @@ my $template_lxcconf_file    = "$template_dir/lxc.conf";
 my $template_etc_dir         = "$template_rootfs_dir/home/etc";
 
 # Repo paths
-my $repo_chroot_dir   = "$LXC_REPO_DIR/chroot";
+my $repo_chroot_dir   = "$LXC_REPO_DIR/chroot-scripts";
 my $repo_lxcconf_file = "$LXC_REPO_DIR/lxc.conf";
 
 # LVM paths
