@@ -43,8 +43,8 @@ Readonly my $LXC_TEMPLATE_DIR => "$LXC_DIR/template";  # Template directory
 Readonly my $LXC_REPO_DIR     => "$LXC_DIR/repo";      # Repository with this script and other tools
 Readonly my $LXC_NAME_MINLEN  => 2;                    # Minimum container name length
 Readonly my $LXC_NAME_MAXLEN  => 32;                   # Maximum container name length
-Readonly my $LXC_ID_MIN       => 2000;                 # Minimum ID value
-Readonly my $LXC_ID_MAX       => 6500;                 # Maximum ID value
+Readonly my $LXC_UID_MIN      => 2000;                 # Minimum UID
+Readonly my $LXC_UID_MAX      => 6500;                 # Maximum UID
 Readonly my $LXC_DEFAULT_TYPE => 'user';               # Default container type
 Readonly my $LXC_LOGLEVEL     => 'INFO';               # lxc-start log level
 Readonly my $LXC_NETWORK      => "10.$SERVER_ID.0.0";  # Network address w/o netmask
@@ -825,7 +825,7 @@ sub chroot_restrictions {
 
 # Validators
 sub validate_container_id {
-	my ($container_id) = @_;
+	my ($container_id, $container_type) = @_;
 
 	# Check container ID
         defined $container_id  or die "Container ID not specified.\n";
@@ -833,8 +833,10 @@ sub validate_container_id {
 	isdigit($container_id) or die "Container ID '$container_id' must be a number.\n";
 
 	# Check min and max values
-	$container_id < $LXC_ID_MIN and die "Container ID '$container_id' too low (<$LXC_ID_MIN).\n";
-	$container_id > $LXC_ID_MAX and die "Container ID '$container_id' too high (>$LXC_ID_MAX).\n";
+	if (defined $container_type and $container_is_readonly) {
+		$container_id < $LXC_UID_MIN and die "Container ID '$container_id' too low (<$LXC_UID_MIN).\n";
+		$container_id > $LXC_UID_MAX and die "Container ID '$container_id' too high (>$LXC_UID_MAX).\n";
+	}
 
 	return;
 }
