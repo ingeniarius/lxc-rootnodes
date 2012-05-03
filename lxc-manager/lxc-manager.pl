@@ -291,6 +291,12 @@ sub command_create {
 	validate_container_type($container_type);	
 	validate_template_name($template_name);
 
+        # Check UID
+        if ($container_is_readonly) {
+                $container_id < $LXC_UID_MIN and die "Container ID '$container_id' too low (<$LXC_UID_MIN).\n";
+                $container_id > $LXC_UID_MAX and die "Container ID '$container_id' too high (>$LXC_UID_MAX).\n";
+        }
+
 	# Check container
 	is_container_running($container_name) and die "Container '$container_name' is running.\n";
 	container_id_exists($container_id)    and die "Container ID '$container_id' already exists.\n";
@@ -557,7 +563,7 @@ sub command_list {
 		my $ascii_table = Text::ASCIITable->new($TABLE_OPTS);
 
 		# Set table columns
-		$ascii_table->setCols( ["${WHT}uid", 'user', "status${RST}" ]);
+		$ascii_table->setCols( ["${WHT}uid", 'username', 'address', "status${RST}" ]);
 
 		# Prepare table data
 		my @table_rows;
@@ -570,9 +576,12 @@ sub command_list {
 			# Get container status
 			my $container_status = is_container_running($container_name);
 			   $container_status = $container_status ? "${GRN}running${RST}" : "${RED}stopped${RST}";
+
+			# IP address
+			my $container_ipaddr = get_container_ip($container_id);
 			
 			# Add row to table
-			push @table_rows, [ $container_id, $container_name, $container_status ];
+			push @table_rows, [ $container_id, $container_name, $container_ipaddr, $container_status ];
 		}
 
 		# Skip empty table
@@ -825,18 +834,12 @@ sub chroot_restrictions {
 
 # Validators
 sub validate_container_id {
-	my ($container_id, $container_type) = @_;
+	my ($container_id) = @_;
 
 	# Check container ID
         defined $container_id  or die "Container ID not specified.\n";
 	$container_id eq ''   and die "Container ID is empty.\n";
 	isdigit($container_id) or die "Container ID '$container_id' must be a number.\n";
-
-	# Check min and max values
-	if (defined $container_type and $container_is_readonly) {
-		$container_id < $LXC_UID_MIN and die "Container ID '$container_id' too low (<$LXC_UID_MIN).\n";
-		$container_id > $LXC_UID_MAX and die "Container ID '$container_id' too high (>$LXC_UID_MAX).\n";
-	}
 
 	return;
 }
