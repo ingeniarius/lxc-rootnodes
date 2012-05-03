@@ -117,7 +117,7 @@ rm -rf /etc/network
 rm /etc/fstab /etc/hostname /etc/debian_version
 
 # Install system packages
-aptitude -q -y install locales vim htop less ssh screen dstat ifstat iotop apg
+aptitude -q -y install locales vim htop less ssh screen dstat ifstat iotop apg dnsutils sysv-rc-conf
 
 # Set locale
 perl -e 's/^# (en_US.UTF-8 UTF-8|pl_PL ISO-8859-2|pl_PL.UTF-8 UTF-8|de_DE.UTF-8 UTF-8)/$1/g' -p -i /etc/locale.gen
