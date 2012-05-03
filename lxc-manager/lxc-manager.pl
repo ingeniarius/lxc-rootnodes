@@ -48,6 +48,7 @@ Readonly my $LXC_UID_MAX      => 6500;                         # Maximum UID
 Readonly my $LXC_DEFAULT_TYPE => 'user';                       # Default container type
 Readonly my $LXC_LOGLEVEL     => 'INFO';                       # lxc-start log level
 Readonly my $LXC_NETWORK      => "10.$SERVER_ID.0.0";          # Network address w/o netmask
+Readonly my $LXC_INTERFACE    => 'br0';                        # Network interface
 Readonly my $LXC_DAEMON       => $ENV{DAEMON} || 1;            # Daemonize lxc-start process
 
 # LVM configuration
@@ -995,7 +996,7 @@ sub get_server_info {
 
 	# Server ID
 	if ($info_type eq 'id') {
-		my @inet_addr = `ip address show dev br0`;
+		my @inet_addr = `ip address show dev $LXC_INTERFACE`;
 		for (@inet_addr) {
 			# Look for 'inet CLASS.x.x.x/NETMASK' e.g. 10.66.0.1/16 
 			if ( my ($server_id) = /inet\s(?:10|192\.168\|172\.16)\.(\d+)(?:\.\d+)+\/\d+\s/ ) {
@@ -1007,7 +1008,7 @@ sub get_server_info {
 
 	# Get server type (e.g. web) and server domain (e.g. rootnode.net)
 	my ($server_type, $server_domain) = $HOSTNAME =~ /^(\w+?)\d+\.([\w.]+)$/;
-	not defined ($server_type and $server_domain) and die "Cannot get server type or domain from \$HOSTNAME ($HOSTNAME)";
+	defined ($server_type and $server_domain) or die "Cannot get server type or domain from \$HOSTNAME ($HOSTNAME)";
 
 	# Server type
 	if ($info_type eq 'type') {
