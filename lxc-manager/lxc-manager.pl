@@ -28,7 +28,9 @@ Readonly my $HOSTNAME          => hostname;                           # Server h
 Readonly my $DEBIAN_VERSION    => 'squeeze';                          # Debian version
 Readonly my $DEBIAN_ARCH       => 'amd64';                            # System architecture
 Readonly my $DEBIAN_REPO       => 'http://ftp.fr.debian.org/debian';  # Debian repository
+Readonly my $NETWORK_IFACE     => 'br0';                              # Network interface
 Readonly my $SYSCTL_GRSEC_FILE => '/etc/sysctl.d/grsec.conf';         # Explicit sysctl flags for Grsecurity
+
 
 # Server configuration
 Readonly my $SERVER_ID       => get_server_info('id');      # Server id
@@ -48,7 +50,6 @@ Readonly my $LXC_UID_MAX      => 6500;                         # Maximum UID
 Readonly my $LXC_DEFAULT_TYPE => 'user';                       # Default container type
 Readonly my $LXC_LOGLEVEL     => 'INFO';                       # lxc-start log level
 Readonly my $LXC_NETWORK      => "10.$SERVER_ID.0.0";          # Network address w/o netmask
-Readonly my $LXC_INTERFACE    => 'br0';                        # Network interface
 Readonly my $LXC_DAEMON       => $ENV{DAEMON} || 1;            # Daemonize lxc-start process
 
 # LVM configuration
@@ -996,7 +997,7 @@ sub get_server_info {
 
 	# Server ID
 	if ($info_type eq 'id') {
-		my @inet_addr = `ip address show dev $LXC_INTERFACE`;
+		my @inet_addr = `ip address show dev $NETWORK_IFACE`;
 		for (@inet_addr) {
 			# Look for 'inet CLASS.x.x.x/NETMASK' e.g. 10.66.0.1/16 
 			if ( my ($server_id) = /inet\s(?:10|192\.168\|172\.16)\.(\d+)(?:\.\d+)+\/\d+\s/ ) {
