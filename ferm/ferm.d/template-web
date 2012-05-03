@@ -1,0 +1,15 @@
+#table filter {
+#	chain FORWARD {
+#		proto tcp destination 10.x.x.x dport 22 ACCEPT;
+#		proto tcp destination 10.x.x.x dport 80 ACCEPT;
+#		proto tcp destination 10.x.x.x dport xxxx0:xxxx9 ACCEPT;
+#	}
+#}
+
+#table nat {
+#	chain PREROUTING {
+#		proto tcp destination $PUBLIC_IP dport xxxx DNAT to 10.x.x.x:22;
+#		#proto tcp destination $PUBLIC_IP dport 1xxxx DNAT to 10.x.x.x:80;
+#		proto tcp destination $PUBLIC_IP dport xxxx0:xxxx9 DNAT to 10.x.x.x:xxxx0-xxxx9;
+#	}
+#}

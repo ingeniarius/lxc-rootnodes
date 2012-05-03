@@ -14,10 +14,10 @@ use Readonly;
 use Smart::Comments;
 
 # Configuration
-Readonly my $LVM_VG              => 'lxc';  # LVM volume group name
-Readonly my $LVM_SNAPSHOT_SUFFIX => 'snapshot'; 
-Readonly my $LVM_SNAPSHOT_SIZE   => '2G';   # Snapshot size
-Readonly my $LVM_SNAPSHOT_DIR    => '/mnt'; # Snapshot mount point
+Readonly my $LVM_VG              => 'lxc';       # LVM volume group name
+Readonly my $LVM_SNAPSHOT_SUFFIX => 'snapshot';  # Suffix added to LV name 
+Readonly my $LVM_SNAPSHOT_SIZE   => '2G';        # Snapshot size
+Readonly my $LVM_SNAPSHOT_DIR    => '/snapshot'; # Snapshot mount point
 
 # Terminal
 Readonly my $BASENAME => basename($0);

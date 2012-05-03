@@ -1,0 +1,3 @@
+Needed packages
+
+libtie-ixhash-perl libfile-path-perl libreadonly-perl debootstrap libtext-asciitable-perl bridge-utils lxc libdata-validate-ip-perl

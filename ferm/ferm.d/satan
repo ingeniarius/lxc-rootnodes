@@ -1,0 +1,9 @@
+table filter {
+	chain FORWARD {
+	}
+}
+
+table nat {
+        chain PREROUTING {
+        }
+}

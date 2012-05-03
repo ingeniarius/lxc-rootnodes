@@ -1,0 +1,24 @@
+#
+# MySQL container firewall rules
+# Rootnode, http://rootnode.net
+#
+# Copyright (C) 2012 Marcin Hlybin
+# All rights reserved.
+#
+
+table filter {
+	chain FORWARD {
+		# Allow user connections to MySQL database
+		proto tcp source $LXC_NET destination $MYSQL_IP dport 3306 ACCEPT;
+
+		# Allow satan SSH connections to MySQL container
+		proto tcp source $SATAN_IP destination $MYSQL_IP dport 22 ACCEPT;
+	}
+}
+
+table nat {
+        chain PREROUTING {
+		# Accept SSH connections on public IP (satan tunnel)
+		proto tcp destination $SERVICE_IP dport 1610 DNAT to "$MYSQL_IP:22";
+        }
+}
