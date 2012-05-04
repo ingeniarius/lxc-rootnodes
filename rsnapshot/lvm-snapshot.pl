@@ -29,6 +29,7 @@ LVM snapshot
 Usage: 
 	$BASENAME create <lv_name> 
 	$BASENAME remove <lv_name>
+	$BASENAME list <type>
 END_OF_USAGE
 
 # Get arguments
@@ -62,6 +63,12 @@ if ($command_name eq 'remove') {
 	exit 0;
 }
 
+# List containers
+if ($command_name eq 'list') {
+	list_lvs($lv_name);
+	exit 0;
+}
+
 # Unknown command 
 die "Command name '$command_name' not found. See '$BASENAME help'.\n";
 
@@ -90,6 +97,34 @@ sub create_snapshot {
 	# Mount snapshot
 	mount_snapshot($snapshot_name);
 	$? and die "Cannot mount snapshot '$snapshot_name': $!\n";
+
+	return;
+}
+
+sub list_lvs {
+	my ($lv_type) = @_;
+	my $lv_count;
+	
+	# Get logical volumes
+	my $lvs = `lvs -olv_name --noheading --rows --unbuffered --aligned --separator=,`;
+           $lvs =~ s/\s+//g;
+        my @lvs =  split /,/, $lvs;
+
+	LV:
+	foreach my $lv_name (@lvs) {
+		# LV starts with 'type-'
+		my $lv_prefix = "$lv_type-";
+
+		# Print LV of specified type
+		if ($lv_name =~ /^\Q$lv_prefix\E/) {
+			print "$lv_name\n";
+			$lv_count++;
+		}
+	}
+	
+	# Error if list is empty
+	my $is_empty = $lv_count ? 0 : 1;
+	die "Logical volumes of type '$lv_type' not found.\n" if $is_empty;
 
 	return;
 }
