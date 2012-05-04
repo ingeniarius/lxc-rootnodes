@@ -18,6 +18,7 @@ Readonly my $LVM_VG              => 'lxc';       # LVM volume group name
 Readonly my $LVM_SNAPSHOT_SUFFIX => 'snapshot';  # Suffix added to LV name 
 Readonly my $LVM_SNAPSHOT_SIZE   => '2G';        # Snapshot size
 Readonly my $LVM_SNAPSHOT_DIR    => '/snapshot'; # Snapshot mount point
+Readonly my $LV_IGNORE           => '^(?:lxc)$'; # Ignore LV regexp
 
 # Terminal
 Readonly my $BASENAME => basename($0);
@@ -29,14 +30,14 @@ LVM snapshot
 Usage: 
 	$BASENAME create <lv_name> 
 	$BASENAME remove <lv_name>
-	$BASENAME list <type>
+	$BASENAME list <type>|ALL
 END_OF_USAGE
 
 # Get arguments
 my $command_name = shift or die $USAGE;
 
-my $lv_name = shift            or die "LVM logical volume name not specified.\n";
-   $lv_name =~ /^[a-z0-9\-]+$/ or die "Incorrect LVM logical volume name.\n";
+my $lv_name = shift                    or die "LVM logical volume name not specified.\n";
+   $lv_name =~ /^(?:[a-z0-9\-]+|ALL)$/ or die "Incorrect LVM logical volume name.\n";
 
 # Add suffix to LV name
 my $snapshot_name = "$lv_name-$LVM_SNAPSHOT_SUFFIX";
@@ -112,14 +113,18 @@ sub list_lvs {
 
 	LV:
 	foreach my $lv_name (@lvs) {
+		# Ignore LV
+		next if $lv_name =~ /$LV_IGNORE/;
+
 		# LV starts with 'type-'
 		my $lv_prefix = "$lv_type-";
 
-		# Print LV of specified type
-		if ($lv_name =~ /^\Q$lv_prefix\E/) {
-			print "$lv_name\n";
-			$lv_count++;
-		}
+		# Skip if not specified type
+		next if $lv_type ne 'ALL' and $lv_name !~ /^\Q$lv_prefix\E/;
+		$lv_count++;
+
+		# Print LV
+		print "$lv_name\n";
 	}
 	
 	# Error if list is empty
