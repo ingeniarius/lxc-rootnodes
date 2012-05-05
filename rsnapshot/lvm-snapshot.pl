@@ -1,6 +1,10 @@
 #!/usr/bin/perl
 #
 # LVM snapshot
+#
+# Used together with rsnapshot allows to
+# create remote LVM snapshot backups.
+#
 # Rootnode, http://rootnode.net
 #
 # Copyright (C) 2012 Marcin Hlybin
