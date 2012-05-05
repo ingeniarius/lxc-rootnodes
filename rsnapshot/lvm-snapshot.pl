@@ -39,8 +39,17 @@ my $command_name = shift or die $USAGE;
 my $lv_name = shift                    or die "LVM logical volume name not specified.\n";
    $lv_name =~ /^(?:[a-z0-9\-]+|ALL)$/ or die "Incorrect LVM logical volume name.\n";
 
-# Add suffix to LV name
-my $snapshot_name = "$lv_name-$LVM_SNAPSHOT_SUFFIX";
+# Snapshot name 
+Readonly my $snapshot_name => "$lv_name-$LVM_SNAPSHOT_SUFFIX";
+
+# Snapshot mount point
+Readonly my $snapshot_mount_point => "$LVM_SNAPSHOT_DIR/$lv_name";
+
+# Snapshot device
+my $snapshot_name_hyphened = $snapshot_name;
+   $snapshot_name_hyphened =~ s/-/--/g;
+
+Readonly my $snapshot_device => "/dev/mapper/$LVM_VG-$snapshot_name_hyphened";
 
 # Create snapshot
 if ($command_name eq 'create') {
@@ -110,6 +119,7 @@ sub list_lvs {
 	my $lvs = `lvs -olv_name --noheading --rows --unbuffered --aligned --separator=,`;
            $lvs =~ s/\s+//g;
         my @lvs =  split /,/, $lvs;
+	chomp @lvs;
 
 	LV:
 	foreach my $lv_name (@lvs) {
@@ -137,15 +147,6 @@ sub list_lvs {
 sub mount_snapshot {
 	my ($snapshot_name) = @_;
 	
-	# Snapshot device
-	my $snapshot_name_hyphened = $snapshot_name;
-	   $snapshot_name_hyphened =~ s/-/--/g;
-
-	my $snapshot_device = "/dev/mapper/$LVM_VG-$snapshot_name_hyphened";
-
-	# Snapshot mount point
-	my $snapshot_mount_point = "$LVM_SNAPSHOT_DIR/$snapshot_name";
-
 	# Create mount point
 	mkdir $snapshot_mount_point       or die "Cannot create directory '$snapshot_mount_point'";
 	chmod 0700, $snapshot_mount_point or die "Cannot chmod directory '$snapshot_mount_point'";
@@ -160,9 +161,6 @@ sub mount_snapshot {
 sub umount_snapshot {
 	my ($snapshot_name) = @_;
 	
-	# Snapshot mount point
-	my $snapshot_mount_point = "$LVM_SNAPSHOT_DIR/$snapshot_name";
-
 	# Check if snapshot is mounted
 	sub is_snapshot_mounted { 
 		my ($snapshot_mount_point) = @_;	
