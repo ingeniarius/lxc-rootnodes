@@ -571,7 +571,7 @@ sub command_list {
 		my @table_rows;
 
 		ID:
-		foreach my $container_id (keys %container_name_for) {
+		foreach my $container_id (sort { $a <=> $b } keys %container_name_for) {
 			# Container name
 			my $container_name = $container_name_for{$container_id};
 
