@@ -29,9 +29,9 @@ Readonly my $LVM_SNAPSHOT_SUFFIX  => 'snapshot';
 Readonly my $RSNAPSHOT_BIN       => '/usr/bin/rsnapshot';
 Readonly my $RSNAPSHOT_DIR       => '/etc/rsnapshot';
 Readonly my $RSNAPSHOT_MAIN_CONF => "$RSNAPSHOT_DIR/rsnapshot.conf";
-Readonly my $RSNAPSHOT_USER_CONF => "$RSNAPSHOT_DIR/user.conf";
 Readonly my $RSNAPSHOT_DU_DIR    => "$RSNAPSHOT_DIR/du_reports";
-Readonly my $RSNAPSHOT_ROOT_DIR      => '/home/rsnapshot';
+Readonly my $RSNAPSHOT_ROOT_DIR  => '/home/rsnapshot';
+Readonly my $RSNAPSHOT_USER_CONF => "$RSNAPSHOT_ROOT_DIR/user.conf";
 
 Readonly my $DEFAULT_RETAIN_HOURLY  => 6;
 Readonly my $DEFAULT_RETAIN_DAILY   => 7;
