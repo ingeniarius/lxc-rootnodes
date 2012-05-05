@@ -39,11 +39,18 @@ my $command_name = shift or die $USAGE;
 my $lv_name = shift                    or die "LVM logical volume name not specified.\n";
    $lv_name =~ /^(?:[a-z0-9\-]+|ALL)$/ or die "Incorrect LVM logical volume name.\n";
 
+# Get container name and type from LV name
+# Container type is undef if LV name not hyphened
+my ($container_name, $container_type) = ($lv_name, undef);
+if ($lv_name =~ /-/) {
+	($container_type, $container_name) = split /-/, $lv_name;
+}
+
 # Snapshot name 
 Readonly my $snapshot_name => "$lv_name-$LVM_SNAPSHOT_SUFFIX";
 
 # Snapshot mount point
-Readonly my $snapshot_mount_point => "$LVM_SNAPSHOT_DIR/$lv_name";
+Readonly my $snapshot_mount_point => "$LVM_SNAPSHOT_DIR/$container_name";
 
 # Snapshot device
 my $snapshot_name_hyphened = $snapshot_name;
