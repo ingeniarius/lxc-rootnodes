@@ -169,7 +169,7 @@ sub create_user_conf {
 include_conf	$RSNAPSHOT_MAIN_CONF
 snapshot_root	$snapshot_root
 
-ssh_args	-p $ssh_port $SSH_OPTIONS
+ssh_args	-p $ssh_port
 
 retain	hourly	$retain_hourly
 retain	daily	$retain_daily
