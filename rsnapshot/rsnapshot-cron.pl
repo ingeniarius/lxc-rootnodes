@@ -30,18 +30,30 @@ Readonly my $LVM_SNAPSHOT_DIR     => '/snapshot'; # Snapshot mount point
 Readonly my $LVM_SNAPSHOT_COMMAND => '/usr/local/sbin/lvm-snapshot';
 Readonly my $LVM_SNAPSHOT_SUFFIX  => 'snapshot';
 
-Readonly my $RSNAPSHOT_BIN       => '/usr/bin/rsnapshot';
-Readonly my $RSNAPSHOT_DIR       => '/etc/rsnapshot';
-Readonly my $RSNAPSHOT_MAIN_CONF => "$RSNAPSHOT_DIR/rsnapshot.conf";
-Readonly my $RSNAPSHOT_ROOT_DIR  => '/home/rsnapshot';
-Readonly my $RSNAPSHOT_USER_CONF => "$RSNAPSHOT_ROOT_DIR/user.conf";
-Readonly my $RSNAPSHOT_DU_DIR    => "$RSNAPSHOT_ROOT_DIR/du_reports";
+Readonly my $RSNAPSHOT_BIN           => '/usr/bin/rsnapshot';
+Readonly my $RSNAPSHOT_DIR           => '/etc/rsnapshot';
 
-Readonly my $DEFAULT_RETAIN_HOURLY  => 6;
-Readonly my $DEFAULT_RETAIN_DAILY   => 7;
-Readonly my $DEFAULT_RETAIN_WEEKLY  => 4;
-Readonly my $DEFAULT_RETAIN_MONTHLY => 3;
+Readonly my $RSNAPSHOT_MAIN_CONF     => "$RSNAPSHOT_DIR/rsnapshot.conf";
+Readonly my $RSNAPSHOT_ROOT_DIR      => '/home/rsnapshot';
+
+Readonly my $SNAPSHOT_DIR       => "$RSNAPSHOT_ROOT_DIR/snapshots";
+Readonly my $SNAPSHOT_CONF_FILE => "$RSNAPSHOT_ROOT_DIR/snapshot.conf";
+Readonly my $SNAPSHOT_DU_DIR    => "$SNAPSHOT_DIR/du_reports";
+
+Readonly my $DB_DIR       => "$RSNAPSHOT_ROOT_DIR/dbdumps";
+Readonly my $DB_CONF_FILE => "$RSNAPSHOT_ROOT_DIR/db.conf";
+Readonly my $DB_DU_DIR    => "$DB_DIR/du_reports";
+
+Readonly my $DEFAULT_SNAPSHOT_RETAIN_HOURLY  => 6;
+Readonly my $DEFAULT_SNAPSHOT_RETAIN_DAILY   => 7;
+Readonly my $DEFAULT_SNAPSHOT_RETAIN_WEEKLY  => 4;
+Readonly my $DEFAULT_SNAPSHOT_RETAIN_MONTHLY => 3;
 Readonly my $DEFAULT_LV_TYPE        => 'other';
+
+Readonly my $DEFAULT_DB_RETAIN_HOURLY  => 6;
+Readonly my $DEFAULT_DB_RETAIN_DAILY   => 7;
+Readonly my $DEFAULT_DB_RETAIN_WEEKLY  => 4;
+Readonly my $DEFAULT_DB_RETAIN_MONTHLY => 3;
 
 -f $RSNAPSHOT_MAIN_CONF or die "Configuration file \$RSNAPSHOT_MAIN_CONF ($RSNAPSHOT_MAIN_CONF) not found.\n";
 -d $RSNAPSHOT_ROOT_DIR  or die "Root directory \$RSNAPSHOT_ROOT_DIR ($RSNAPSHOT_ROOT_DIR) not found.\n";
@@ -62,7 +74,7 @@ Options:
 END_OF_USAGE
 
 # Remove old user configuration
-unlink $RSNAPSHOT_USER_CONF;
+unlink $RSNAPSHOT_SNAPSHOT_CONF;
 
 # Create du reports directory
 -d $RSNAPSHOT_DU_DIR or mkdir $RSNAPSHOT_DU_DIR, 0700;
@@ -78,10 +90,10 @@ my $ssh_rsync_port = $SSH_RSYNC_PORT;
 my $ssh_host;
 
 # Set default interval values
-my $retain_hourly  = $DEFAULT_RETAIN_HOURLY;
-my $retain_daily   = $DEFAULT_RETAIN_DAILY;
-my $retain_weekly  = $DEFAULT_RETAIN_WEEKLY;
-my $retain_monthly = $DEFAULT_RETAIN_MONTHLY;
+my $retain_hourly  = $DEFAULT_SNAPSHOT_RETAIN_HOURLY;
+my $retain_daily   = $DEFAULT_SNAPSHOT_RETAIN_DAILY;
+my $retain_weekly  = $DEFAULT_SNAPSHOT_RETAIN_WEEKLY;
+my $retain_monthly = $DEFAULT_SNAPSHOT_RETAIN_MONTHLY;
 
 # Get options
 GetOptions(
@@ -112,7 +124,7 @@ is_domain($ssh_host) or die "Host '$ssh_host' must be a domain.\n";
 # Get logical volumes
 my @lvs = `$SSH_BIN $SSH_OPTIONS -i $SSH_SNAPSHOT_KEY $ssh_snapshot_user\@$ssh_host -p $ssh_snapshot_port $LVM_SNAPSHOT_COMMAND list ALL`;
 
-BACKUP:
+LV:
 foreach my $lv_name (@lvs) {
 	chomp $lv_name;
 	
@@ -128,13 +140,13 @@ foreach my $lv_name (@lvs) {
 	}
 
 	# Create user configuration	
-	create_user_conf($container_name, $container_type);
+	create_snapshot_conf($container_name, $container_type);
 
 	# Create LVM snapshot
 	lvm_snapshot('create', $lv_name);
 			
 	# Run rsnapshot
-	system("$RSNAPSHOT_BIN -c $RSNAPSHOT_USER_CONF $backup_level");
+	system("$RSNAPSHOT_BIN -c $SNAPSHOT_CONF_FILE $backup_level");
 
 	# Remove LVM snapshot
 	lvm_snapshot('remove', $lv_name);
@@ -142,6 +154,27 @@ foreach my $lv_name (@lvs) {
 	# Generate size report
 	generate_du_report($container_name, $container_type);
 }
+
+# DB backup
+my @dbs = `mysql -Nse 'show databases'`;
+
+DB:
+foreach my $db_name (sort @dbs) {
+	
+	# Skip informational databases
+	next DB if $db_name eq 'information_schema';
+	next DB if $db_name eq 'performance_schema';
+
+	my $uid;
+	if ($db_name =~ /^my(\d+)_\w+$/) {
+		$uid = $1;
+	}		
+
+	
+	
+
+}
+
 
 exit 0;
 
@@ -155,7 +188,7 @@ sub generate_du_report {
 	}
  	
 	# Generate du report
-	my $du_report = `$RSNAPSHOT_BIN -c $RSNAPSHOT_USER_CONF du`;
+	my $du_report = `$RSNAPSHOT_BIN -c $RSNAPSHOT_SNAPSHOT_CONF du`;
 	
 	# Remove old report file
 	my $du_report_file = "$du_report_dir/$container_name";
@@ -169,16 +202,16 @@ sub generate_du_report {
 	return;
 }
 
-sub create_user_conf {
+sub create_snapshot_conf {
 	my ($container_name, $container_type) = @_;
 
 	# Destination path
 	my $snapshot_root = "$RSNAPSHOT_ROOT_DIR/$container_type/$container_name";
 
-	# Create user configuration file
-	open my $conf_fh, '>', $RSNAPSHOT_USER_CONF or die "Cannot create $RSNAPSHOT_USER_CONF file";
+	# Create snapshot configuration file
+	open my $conf_fh, '>', $RSNAPSHOT_SNAPSHOT_CONF or die "Cannot create $RSNAPSHOT_SNAPSHOT_CONF file";
 	print $conf_fh <<EOF;
-# Config file for $container_name
+# Snapshot config file for $container_name
 include_conf	$RSNAPSHOT_MAIN_CONF
 snapshot_root	$snapshot_root
 
@@ -193,6 +226,14 @@ backup	$ssh_rsync_user\@$ssh_host:$LVM_SNAPSHOT_DIR/$container_name/	$container_
 EOF
 	close $conf_fh;
 	return;
+}
+
+sub create_db_conf {
+	
+# DB config file
+include_conf	$RSNAPSHOT_MAIN_CONF
+snapshot_root	$snapshot_root
+		
 }
 
 sub lvm_snapshot {

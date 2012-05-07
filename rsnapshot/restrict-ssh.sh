@@ -7,7 +7,7 @@
 # All rights reserved.
 #
 
-COMMAND_NAME=$1
+COMMAND_NAME=$*
 case "$SSH_ORIGINAL_COMMAND" in  
         *\&*)  
                  echo "Rejected"  

@@ -11,14 +11,17 @@ table filter {
 		# Allow user connections to MySQL database
 		proto tcp source $LXC_NET destination $MYSQL_IP dport 3306 ACCEPT;
 
-		# Allow satan SSH connections to MySQL container
+		# Allow SSH tunnel from satan
 		proto tcp source $SATAN_IP destination $MYSQL_IP dport 22 ACCEPT;
+
+		# Allow SSH tunnel from backup server
+		proto tcp source $BACKUP_IP destination $MYSQL_IP dport 22 ACCEPT;
 	}
 }
 
 table nat {
         chain PREROUTING {
-		# Accept SSH connections on public IP (satan tunnel)
+		# Accept SSH connections on public IP for SSH tunneling
 		proto tcp destination $SERVICE_IP dport 1610 DNAT to "$MYSQL_IP:22";
         }
 }
