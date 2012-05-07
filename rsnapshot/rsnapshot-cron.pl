@@ -17,10 +17,12 @@ use Data::Validate::Domain qw(is_domain);
 use Smart::Comments;
 
 # Configuration
-Readonly my $SSH_PORT    => 22;
-Readonly my $SSH_USER    => 'root';
 Readonly my $SSH_BIN     => '/usr/bin/ssh';
 Readonly my $SSH_OPTIONS => '-oStrictHostKeyChecking=no';
+Readonly my $SSH_SNAPSHOT_USER => 'root';
+Readonly my $SSH_SNAPSHOT_PORT => 22;
+Readonly my $SSH_RSYNC_USER    => 'rsnapshot';
+Readonly my $SSH_RSYNC_PORT    => 22;
 
 Readonly my $LVM_SNAPSHOT_DIR     => '/snapshot'; # Snapshot mount point
 Readonly my $LVM_SNAPSHOT_COMMAND => '/usr/local/sbin/lvm-snapshot';
@@ -64,9 +66,13 @@ unlink $RSNAPSHOT_USER_CONF;
 -d $RSNAPSHOT_DU_DIR or mkdir $RSNAPSHOT_DU_DIR, 0700;
 
 # Set default SSH values
-my $ssh_port    = $SSH_PORT;
-my $ssh_user    = $SSH_USER;
-my $ssh_command = $LVM_SNAPSHOT_COMMAND;
+my $ssh_snapshot_user    = $SSH_SNAPSHOT_USER;
+my $ssh_snapshot_port    = $SSH_SNAPSHOT_PORT;
+my $ssh_snapshot_command = $LVM_SNAPSHOT_COMMAND;
+
+my $ssh_rsync_user = $SSH_RSYNC_USER;
+my $ssh_rsync_port = $SSH_RSYNC_PORT;
+
 my $ssh_host;
 
 # Set default interval values
@@ -77,28 +83,32 @@ my $retain_monthly = $DEFAULT_RETAIN_MONTHLY;
 
 # Get options
 GetOptions(
-	'port=i'     => \$ssh_port,
-	'user=s'     => \$ssh_user,
-	'host=s'     => \$ssh_host,
-	'command=s'  => \$ssh_command,
+	'snapshot-user=s' => \$ssh_snapshot_user,
+	'snapshot-port=i' => \$ssh_snapshot_port,
+	'rsync-user=s'    => \$ssh_rsync_user,
+	'rsync-port=i'    => \$ssh_rsync_port,
+	'host=s'          => \$ssh_host,
 );
 
 # Get arguments
 my $backup_level = shift or die $USAGE;
 
-# Validate SSH 
-isdigit($ssh_port)                     or die "SSH port '$ssh_port' must be a number.\n";
-($ssh_port > 0 and $ssh_port <= 65535) or die "SSH port '$ssh_port' must be between 1 and 65535.\n";
-
 # Validate SSH user
-$ssh_user =~ /^[a-z0-9]{2,32}$/ or die "Incorrect SSH user '$ssh_user'.\n";
+$ssh_snapshot_user =~ /^[a-z0-9]{2,32}$/ or die "Incorrect SSH snapshot user '$ssh_snapshot_user'.\n";
+$ssh_rsync_user    =~ /^[a-z0-9]{2,32}$/ or die "Incorrect SSH rsync user '$ssh_rsync_user'.\n";
+
+# Validate SSH port
+isdigit($ssh_snapshot_port) or die "SSH snapshot port '$ssh_snapshot_port' must be a number.\n";
+isdigit($ssh_rsync_port)    or die "SSH rsync port '$ssh_rsync_port' must be a number.\n";
+($ssh_snapshot_port > 0 and $ssh_snapshot_port <= 65535) or die "SSH snapshot port '$ssh_snapshot_port' must be between 1 and 65535.\n";
+($ssh_rsync_port > 0    and $ssh_rsync_port <= 65535) or die "SSH rsync port '$ssh_rsync_port' must be between 1 and 65535.\n";
 
 # Validate SSH host
 defined $ssh_host    or die "Host not specified.\n";
 is_domain($ssh_host) or die "Host '$ssh_host' must be a domain.\n";
 
 # Get logical volumes
-my @lvs = `$SSH_BIN $SSH_OPTIONS $ssh_user\@$ssh_host -p $ssh_port $ssh_command list ALL`;
+my @lvs = `$SSH_BIN $SSH_OPTIONS $ssh_snapshot_user\@$ssh_host -p $ssh_snapshot_port $LVM_SNAPSHOT_COMMAND list ALL`;
 
 BACKUP:
 foreach my $lv_name (@lvs) {
@@ -169,14 +179,14 @@ sub create_user_conf {
 include_conf	$RSNAPSHOT_MAIN_CONF
 snapshot_root	$snapshot_root
 
-ssh_args	-p $ssh_port
+ssh_args	-p $ssh_rsync_port
 
 retain	hourly	$retain_hourly
 retain	daily	$retain_daily
 retain	weekly	$retain_weekly
 retain	monthly	$retain_monthly
 
-backup	$ssh_user\@$ssh_host:$LVM_SNAPSHOT_DIR/$container_name/	$container_name/
+backup	$ssh_rsync_user\@$ssh_host:$LVM_SNAPSHOT_DIR/$container_name/	$container_name/
 EOF
 	close $conf_fh;
 	return;
@@ -186,6 +196,6 @@ sub lvm_snapshot {
 	my ($command_name, $lv_name) = @_;
 
 	# Create remote LVM snapshot
-	system("$SSH_BIN $SSH_OPTIONS $ssh_user\@$ssh_host -p $ssh_port $ssh_command $command_name $lv_name");
+	system("$SSH_BIN $SSH_OPTIONS $ssh_snapshot_user\@$ssh_host -p $ssh_snapshot_port $LVM_SNAPSHOT_COMMAND $command_name $lv_name");
 	return;
 }
