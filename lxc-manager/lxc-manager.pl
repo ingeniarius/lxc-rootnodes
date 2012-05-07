@@ -75,6 +75,7 @@ Readonly my @MOUNT_DIRS => qw(bin dev etc root lib sbin usr var);
 my %MOUNT = (
 	home => { opts => 'nodev,nosuid' },
 	var  => { opts => 'noexec,nodev,nosuid', bind_home_if_readonly => 1 }
+	root => { opts => 'noexec,nodev,nosuid', bind_home_if_readonly => 1 }
 );
 
 # Table layout
