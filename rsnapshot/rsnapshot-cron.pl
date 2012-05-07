@@ -21,7 +21,7 @@ Readonly my $SSH_BIN     => '/usr/bin/ssh';
 Readonly my $SSH_OPTIONS => '-oStrictHostKeyChecking=no';
 Readonly my $SSH_SNAPSHOT_USER => 'root';
 Readonly my $SSH_SNAPSHOT_PORT => 22;
-Readonly my $SSH_RSYNC_USER    => 'rsnapshot';
+Readonly my $SSH_RSYNC_USER    => 'root';
 Readonly my $SSH_RSYNC_PORT    => 22;
 
 Readonly my $LVM_SNAPSHOT_DIR     => '/snapshot'; # Snapshot mount point
@@ -116,6 +116,7 @@ foreach my $lv_name (@lvs) {
 	
 	# Skip incorrect volume names
 	next if $lv_name !~ /^[a-z0-9\-]+$/;
+	next if $lv_name =~ /-snapshot$/;
 
 	# Get container name and type from LV name
 	# Container type is undef if LV name not hyphened
