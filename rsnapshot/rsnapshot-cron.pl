@@ -21,10 +21,10 @@ Readonly my $SSH_BIN     => '/usr/bin/ssh';
 Readonly my $SSH_OPTIONS => '-oStrictHostKeyChecking=no';
 Readonly my $SSH_SNAPSHOT_USER => 'root';
 Readonly my $SSH_SNAPSHOT_PORT => 22;
-Readonly my $SSH_SNAPSHOT_KEY  => '/root/.ssh/snapshot_id_rsa';
+Readonly my $SSH_SNAPSHOT_KEY  => '/root/.ssh/snapshot_rsa';
 Readonly my $SSH_RSYNC_USER    => 'root';
 Readonly my $SSH_RSYNC_PORT    => 22;
-Readonly my $SSH_RSYNC_KEY     => '/root/.ssh/rsync_id_rsa';
+Readonly my $SSH_RSYNC_KEY     => '/root/.ssh/rsync_rsa';
 
 Readonly my $LVM_SNAPSHOT_DIR     => '/snapshot'; # Snapshot mount point
 Readonly my $LVM_SNAPSHOT_COMMAND => '/usr/local/sbin/lvm-snapshot';
