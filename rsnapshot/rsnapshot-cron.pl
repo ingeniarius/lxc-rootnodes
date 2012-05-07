@@ -21,8 +21,10 @@ Readonly my $SSH_BIN     => '/usr/bin/ssh';
 Readonly my $SSH_OPTIONS => '-oStrictHostKeyChecking=no';
 Readonly my $SSH_SNAPSHOT_USER => 'root';
 Readonly my $SSH_SNAPSHOT_PORT => 22;
+Readonly my $SSH_SNAPSHOT_KEY  => '/root/.ssh/snapshot_id_rsa';
 Readonly my $SSH_RSYNC_USER    => 'root';
 Readonly my $SSH_RSYNC_PORT    => 22;
+Readonly my $SSH_RSYNC_KEY     => '/root/.ssh/rsync_id_rsa';
 
 Readonly my $LVM_SNAPSHOT_DIR     => '/snapshot'; # Snapshot mount point
 Readonly my $LVM_SNAPSHOT_COMMAND => '/usr/local/sbin/lvm-snapshot';
@@ -108,7 +110,7 @@ defined $ssh_host    or die "Host not specified.\n";
 is_domain($ssh_host) or die "Host '$ssh_host' must be a domain.\n";
 
 # Get logical volumes
-my @lvs = `$SSH_BIN $SSH_OPTIONS $ssh_snapshot_user\@$ssh_host -p $ssh_snapshot_port $LVM_SNAPSHOT_COMMAND list ALL`;
+my @lvs = `$SSH_BIN $SSH_OPTIONS -i $SSH_SNAPSHOT_KEY $ssh_snapshot_user\@$ssh_host -p $ssh_snapshot_port $LVM_SNAPSHOT_COMMAND list ALL`;
 
 BACKUP:
 foreach my $lv_name (@lvs) {
@@ -180,7 +182,7 @@ sub create_user_conf {
 include_conf	$RSNAPSHOT_MAIN_CONF
 snapshot_root	$snapshot_root
 
-ssh_args	-p $ssh_rsync_port
+ssh_args	$SSH_OPTIONS -i $SSH_RSYNC_KEY -p $ssh_rsync_port 
 
 retain	hourly	$retain_hourly
 retain	daily	$retain_daily
@@ -197,6 +199,6 @@ sub lvm_snapshot {
 	my ($command_name, $lv_name) = @_;
 
 	# Create remote LVM snapshot
-	system("$SSH_BIN $SSH_OPTIONS $ssh_snapshot_user\@$ssh_host -p $ssh_snapshot_port $LVM_SNAPSHOT_COMMAND $command_name $lv_name");
+	system("$SSH_BIN $SSH_OPTIONS -i $SSH_SNAPSHOT_KEY $ssh_snapshot_user\@$ssh_host -p $ssh_snapshot_port $LVM_SNAPSHOT_COMMAND $command_name $lv_name");
 	return;
 }
