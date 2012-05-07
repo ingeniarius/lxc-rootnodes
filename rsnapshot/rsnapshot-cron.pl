@@ -23,7 +23,7 @@ Readonly my $SSH_BIN     => '/usr/bin/ssh';
 Readonly my $SSH_OPTIONS => '-oStrictHostKeyChecking=no';
 
 Readonly my $LVM_SNAPSHOT_DIR     => '/snapshot'; # Snapshot mount point
-Readonly my $LVM_SNAPSHOT_COMMAND => '/usr/local/sbin/lvm-snapshot.pl';
+Readonly my $LVM_SNAPSHOT_COMMAND => '/usr/local/sbin/lvm-snapshot';
 Readonly my $LVM_SNAPSHOT_SUFFIX  => 'snapshot';
 
 Readonly my $RSNAPSHOT_BIN       => '/usr/bin/rsnapshot';
