@@ -20,10 +20,10 @@ Readonly my $RSNAPSHOT_ROOT_DIR  => "/home/rsnapshot";
 Readonly my $RSNAPSHOT_CONF_DIR  => "/etc/rsnapshot";
 Readonly my $RSNAPSHOT_CONF_FILE => "$RSNAPSHOT_CONF_DIR/rsnapshot.conf";
 
-Readonly my $SNAPSHOT_DIR        => "$RSNAPSHOT_ROOT_DIR/snapshots";
+Readonly my $SNAPSHOT_DIR        => "$RSNAPSHOT_ROOT_DIR/backup/snapshot";
 Readonly my $SNAPSHOT_CONF_DIR   => "$RSNAPSHOT_ROOT_DIR/snapshot.d";
-Readonly my $SNAPSHOT_PREEXEC    => "$RSNAPSHOT_CONF_DIR/snapshot-preexec.pl";
-Readonly my $SNAPSHOT_POSTEXEC   => "$RSNAPSHOT_CONF_DIR/snapshot-postexec.pl";
+Readonly my $SNAPSHOT_PREEXEC    => "$RSNAPSHOT_CONF_DIR/snapshot/snapshot-preexec.pl";
+Readonly my $SNAPSHOT_POSTEXEC   => "$RSNAPSHOT_CONF_DIR/snapshot/snapshot-postexec.pl";
 
 Readonly my $SSH_BIN             => '/usr/bin/ssh';
 Readonly my $SSH_OPTIONS         => '-oStrictHostKeyChecking=no';

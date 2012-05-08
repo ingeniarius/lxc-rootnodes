@@ -21,7 +21,7 @@ Readonly my $RSNAPSHOT_ROOT_DIR  => "/home/rsnapshot";
 Readonly my $RSNAPSHOT_CONF_DIR  => "/etc/rsnapshot";
 Readonly my $RSNAPSHOT_CONF_FILE => "$RSNAPSHOT_CONF_DIR/rsnapshot.conf";
 
-Readonly my $DB_DIR      => "$RSNAPSHOT_ROOT_DIR/mysqldumps";       # Rsnapshot destination directory
+Readonly my $DB_DIR      => "$RSNAPSHOT_ROOT_DIR/backup/mysqldump"; # Rsnapshot destination directory
 Readonly my $DB_CONF_DIR => "$RSNAPSHOT_ROOT_DIR/mysqldump.d";      # Rsnapshot configuration files 
 Readonly my $DB_DUMP_DIR => "$RSNAPSHOT_ROOT_DIR/mysqldump_script"; # Temporary mysqldump directory 
 

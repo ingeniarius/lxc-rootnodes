@@ -20,8 +20,8 @@ use Smart::Comments;
 Readonly my $RSNAPSHOT_BIN         => '/usr/bin/rsnapshot';
 Readonly my $RSNAPSHOT_ROOT_DIR    => '/home/rsnapshot';
 Readonly my $RSNAPSHOT_CONF_DIR    => '/etc/rsnapshot';
-Readonly my $SNAPSHOT_CONF_SCRIPT  => "$RSNAPSHOT_CONF_DIR/snapshot-conf.pl";
-Readonly my $MYSQLDUMP_CONF_SCRIPT => "$RSNAPSHOT_CONF_DIR/mysqldump-conf.pl";
+Readonly my $SNAPSHOT_CONF_SCRIPT  => "$RSNAPSHOT_CONF_DIR/snapshot/snapshot-conf.pl";
+Readonly my $MYSQLDUMP_CONF_SCRIPT => "$RSNAPSHOT_CONF_DIR/mysqldump/mysqldump-conf.pl";
 
 Readonly my $SNAPSHOT_CONF_DIR  => "$RSNAPSHOT_ROOT_DIR/snapshot.d";
 Readonly my $MYSQLDUMP_CONF_DIR => "$RSNAPSHOT_ROOT_DIR/mysqldump.d";
