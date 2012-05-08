@@ -94,7 +94,6 @@ foreach my $lv_name (@lvs) {
         next if $lv_name =~ /-snapshot$/;
 
         # Get container name and type from LV name
-        # Container type is undef if LV name not hyphened
         my ($container_name, $container_type) = ($lv_name, $DEFAULT_LV_TYPE);
         if ($lv_name =~ /-/) {
                 ($container_type, $container_name) = split /-/, $lv_name;
@@ -118,8 +117,8 @@ retain  daily   $retain_daily
 retain  weekly  $retain_weekly
 retain  monthly $retain_monthly
 
-cmd_preexec     $SNAPSHOT_PREEXEC $container_name $container_type
-cmd_postexec    $SNAPSHOT_POSTEXEC $container_name $container_type
+cmd_preexec     $SNAPSHOT_PREEXEC -h $ssh_host create $lv_name
+cmd_postexec    $SNAPSHOT_POSTEXEC -h $ssh_host remove $lv_name
 
 backup  $SSH_RSYNC_USER\@$SSH_RSYNC_PORT:$SNAPSHOT_DIR/$container_name/   $container_name/
 EOF
