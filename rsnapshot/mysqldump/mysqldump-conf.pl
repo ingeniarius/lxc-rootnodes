@@ -27,7 +27,7 @@ Readonly my $DB_DUMP_DIR => "$RSNAPSHOT_ROOT_DIR/mysqldump_script"; # Temporary 
 
 Readonly my $MYSQL_BIN => "/usr/bin/mysql";
 
-Readonly my $MYSQLDUMP_SCRIPT => "$RSNAPSHOT_CONF_DIR/mysqldump-script.pl"; # mysqldump script 
+Readonly my $MYSQLDUMP_SCRIPT => "$RSNAPSHOT_CONF_DIR/mysqldump/mysqldump-script.pl"; # mysqldump script 
 Readonly my $RSNAPSHOT_SCRIPT => "$DB_DUMP_DIR/mysqldump-script.pl";        # symlink to mysqldump script in dump directory
 
 Readonly my $DEFAULT_CONTAINER_TYPE => 'other';
