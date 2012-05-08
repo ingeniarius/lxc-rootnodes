@@ -12,7 +12,7 @@ use strict;
 use Readonly;
 use Getopt::Long;
 use File::Basename qw(basename);
-use File::Path qw(remove_tree);
+use File::Path qw(remove_tree make_path);
 use Data::Validate::Domain qw(is_domain);
 use Smart::Comments;
 $|++;
@@ -72,7 +72,7 @@ mkdir $DB_CONF_DIR, 0700 or die "Cannot create directory \$DB_CONF_DIR ($DB_CONF
 -f $RSNAPSHOT_SCRIPT or symlink $MYSQLDUMP_SCRIPT, $RSNAPSHOT_SCRIPT;
 
 # Create directories
--d $DB_DIR or mkdir $DB_DIR, 0700 or die "Cannot create directory \$DB_DIR ($DB_DIR)";
+-d $DB_DIR or make_path($DB_DIR, { mode => 0700 }) or die "Cannot create directory \$DB_DIR ($DB_DIR)";
 
 # Set default interval values
 my $retain_hourly  = $DEFAULT_RETAIN_HOURLY;

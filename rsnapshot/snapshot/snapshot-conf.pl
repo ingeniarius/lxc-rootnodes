@@ -11,6 +11,7 @@ use warnings;
 use strict;
 use Readonly;
 use Getopt::Long;
+use File::Path qw(make_path);
 use File::Basename qw(basename);
 use Data::Validate::Domain qw(is_domain);
 use Smart::Comments;
@@ -58,7 +59,7 @@ END_OF_USAGE
 -f $SNAPSHOT_POSTEXEC or die "Cannot find file \$SNAPSHOT_POSTEXEC ($SNAPSHOT_POSTEXEC).\n";
 
 # Create directories
--d $SNAPSHOT_DIR or mkdir $SNAPSHOT_DIR, 0700
+-d $SNAPSHOT_DIR or make_path($SNAPSHOT_DIR, { mode => 0700 })
         or die "Cannot create directory \$SNAPSHOT_DIR ($SNAPSHOT_DIR)";
 -d $SNAPSHOT_CONF_DIR or mkdir $SNAPSHOT_CONF_DIR, 0700
         or die "Cannot create directory \$SNAPSHOT_CONF_DIR ($SNAPSHOT_CONF_DIR)";

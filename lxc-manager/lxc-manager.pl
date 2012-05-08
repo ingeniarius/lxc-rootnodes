@@ -75,8 +75,8 @@ Readonly my @MOUNT_DIRS => qw(bin dev etc root lib sbin usr var);
 my %MOUNT = (
 	home => { opts => 'noexec,nodev,nosuid' },
 	var  => { opts => 'noexec,nodev,nosuid', bind_home_if_readonly => 1 },
+	root => { opts => 'noexec,nodev,nosuid', bind_home_if_readonly => 1 }
 );
-	#root => { opts => 'noexec,nodev,nosuid', bind_home_if_readonly => 1 }
 
 # Table layout
 my @empty_array = [ q[], q[], q[ ], q[] ];
