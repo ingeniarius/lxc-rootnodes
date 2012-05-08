@@ -34,12 +34,9 @@ Readonly my $BASENAME => basename($0);
 Readonly my $USAGE    => <<END_OF_USAGE;
 Rsnapshot cron script
 Usage: 
-	$BASENAME [OPTIONS] <backup_level>
+	$BASENAME -h <hostname> <backup_level>
 
 Available backup levels are: hourly, daily, weekly, monthly
-Options:
-	--host         connection host (required)
-
 END_OF_USAGE
 
 # Get options
@@ -65,7 +62,9 @@ die $! if $?;
 
 # Run rsnapshot 
 my @snapshot_conf_files = glob("$SNAPSHOT_CONF_DIR/*");
-print Dumper(\@snapshot_conf_files);
+
+### snapshot: @snapshot_conf_files
 
 my @mysqldump_conf_files = glob("$MYSQLDUMP_CONF_DIR/*");
-print Dumper(\@mysqldump_conf_files);
+
+### mysqldump: @mysqldump_conf_files
