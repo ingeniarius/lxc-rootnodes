@@ -6,16 +6,13 @@
 # Copyright (C) 2012 Marcin Hlybin
 # All rights reserved.
 #
-#
-# Access to MySQL should be provided
-# from localhost on port 3306
-# by daemontools+autossh for example.
 
 use warnings;
 use strict;
 use Readonly;
 use Getopt::Long;
 use File::Basename qw(basename);
+use File::Path qw(remove_tree);
 use Data::Validate::Domain qw(is_domain);
 use Smart::Comments;
 $|++;
@@ -24,11 +21,14 @@ Readonly my $RSNAPSHOT_ROOT_DIR  => "/home/rsnapshot";
 Readonly my $RSNAPSHOT_CONF_DIR  => "/etc/rsnapshot";
 Readonly my $RSNAPSHOT_CONF_FILE => "$RSNAPSHOT_CONF_DIR/rsnapshot.conf";
 
-Readonly my $DB_DIR      => "$RSNAPSHOT_ROOT_DIR/mysqldumps";
-Readonly my $DB_CONF_DIR => "$RSNAPSHOT_ROOT_DIR/mysqldump.d";
+Readonly my $DB_DIR      => "$RSNAPSHOT_ROOT_DIR/mysqldumps";       # Rsnapshot destination directory
+Readonly my $DB_CONF_DIR => "$RSNAPSHOT_ROOT_DIR/mysqldump.d";      # Rsnapshot configuration files 
+Readonly my $DB_DUMP_DIR => "$RSNAPSHOT_ROOT_DIR/mysqldump_script"; # Temporary mysqldump directory 
 
-Readonly my $MYSQL_BIN        => "/usr/bin/mysql";
-Readonly my $MYSQLDUMP_SCRIPT => "$RSNAPSHOT_ROOT_DIR/mysqldump_script/mysqldump-script.pl";
+Readonly my $MYSQL_BIN => "/usr/bin/mysql";
+
+Readonly my $MYSQLDUMP_SCRIPT => "$RSNAPSHOT_CONF_DIR/mysqldump-script.pl"; # mysqldump script 
+Readonly my $RSNAPSHOT_SCRIPT => "$DB_DUMP_DIR/mysqldump-script.pl";        # symlink to mysqldump script in dump directory
 
 Readonly my $DEFAULT_CONTAINER_TYPE => 'other';
 Readonly my $DEFAULT_RETAIN_HOURLY  => 6;
@@ -48,7 +48,11 @@ Readonly my %IS_SKIPPED_DB => (
 Readonly my $BASENAME => basename($0);
 Readonly my $USAGE    => <<END_OF_USAGE;
 MySQLdump config generator
+Usage:
 	$BASENAME -h <hostname>
+
+Script uses 127.0.0.1:3306 for MySQL connection.
+SSH tunnel recommended (daemontools+autossh).
 
 END_OF_USAGE
 
@@ -57,11 +61,18 @@ END_OF_USAGE
 -f $RSNAPSHOT_CONF_FILE or die "Cannot find \$RSNAPSHOT_CONF_FILE ($RSNAPSHOT_CONF_FILE).\n";
 -f $MYSQLDUMP_SCRIPT    or die "Cannot find \$MYSQLDUMP_SCRIPT ($MYSQLDUMP_SCRIPT).\n";
 
+# Recreate config directory
+-d $DB_CONF_DIR and remove_tree($DB_CONF_DIR);
+mkdir $DB_CONF_DIR, 0700 or die "Cannot create directory \$DB_CONF_DIR ($DB_CONF_DIR)";
+
+# Create temporary dump directory
+-d $DB_DUMP_DIR or mkdir $DB_DUMP_DIR, 0700 or die "Cannot create \$DB_DUMP_DIR ($DB_DUMP_DIR)";
+
+# Create mysqldump-script symlink
+-f $RSNAPSHOT_SCRIPT or symlink $MYSQLDUMP_SCRIPT, $RSNAPSHOT_SCRIPT;
+
 # Create directories
--d $DB_DIR or mkdir $DB_DIR, 0700 
-	or die "Cannot create directory \$DB_DIR ($DB_DIR)";
--d $DB_CONF_DIR or mkdir $DB_CONF_DIR, 0700
-	or die "Cannot create directory \$DB_CONF_DIR ($DB_CONF_DIR)";
+-d $DB_DIR or mkdir $DB_DIR, 0700 or die "Cannot create directory \$DB_DIR ($DB_DIR)";
 
 # Set default interval values
 my $retain_hourly  = $DEFAULT_RETAIN_HOURLY;
@@ -150,7 +161,7 @@ retain  daily   $retain_daily
 retain  weekly  $retain_weekly
 retain  monthly $retain_monthly
 
-backup_script	$MYSQLDUMP_SCRIPT @dbs	mysql/
+backup_script	$RSNAPSHOT_SCRIPT @dbs	mysql/
 EOF
 	close $conf_fh;
 }
