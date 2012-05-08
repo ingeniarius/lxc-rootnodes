@@ -120,7 +120,7 @@ retain	monthly	$retain_monthly
 cmd_preexec	$SNAPSHOT_PREEXEC -h $ssh_host create $lv_name
 cmd_postexec	$SNAPSHOT_POSTEXEC -h $ssh_host remove $lv_name
 
-backup	$SSH_RSYNC_USER\@$SSH_RSYNC_PORT:$SNAPSHOT_DIR/$container_name/	$container_name/
+backup	$SSH_RSYNC_USER\@$ssh_host:$SNAPSHOT_DIR/$container_name/	$container_name/
 EOF
         close $conf_fh;
 }
