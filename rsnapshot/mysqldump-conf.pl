@@ -153,13 +153,13 @@ sub generate_conf_file {
 # container name: $container_name
 # container type: $container_type
 
-include_conf $RSNAPSHOT_CONF_FILE
-snapshot_root $DB_DIR/$container_type/$container_name
+include_conf	$RSNAPSHOT_CONF_FILE
+snapshot_root	$DB_DIR/$container_type/$container_name
 
-retain  hourly  $retain_hourly
-retain  daily   $retain_daily
-retain  weekly  $retain_weekly
-retain  monthly $retain_monthly
+retain	hourly	$retain_hourly
+retain	daily	$retain_daily
+retain	weekly	$retain_weekly
+retain	monthly	$retain_monthly
 
 backup_script	$RSNAPSHOT_SCRIPT @dbs	mysql/
 EOF
