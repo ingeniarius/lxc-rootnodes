@@ -49,7 +49,7 @@ defined $ssh_host    or die "Host not specified.\n";
 is_domain($ssh_host) or die "Host '$ssh_host' must be a domain.\n";
 
 # Create remote LVM snapshot
-system("$SSH_BIN $SSH_OPTIONS -i $SSH_KEY $SSH_USER\@$SSH_HOST -p $SSH_PORT $LVM_SNAPSHOT_COMMAND $command_name $lv_name");
+system("$SSH_BIN $SSH_OPTIONS -i $SSH_KEY $SSH_USER\@$ssh_host -p $SSH_PORT $SSH_COMMAND $command_name $lv_name");
 die $! if $?;
 
 exit 0;
