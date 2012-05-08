@@ -107,20 +107,20 @@ foreach my $lv_name (@lvs) {
 # container name: $container_name
 # container type: $container_type
 
-include_conf    $RSNAPSHOT_CONF_FILE
-snapshot_root   $SNAPSHOT_DIR/$container_type/$container_name
+include_conf	$RSNAPSHOT_CONF_FILE
+snapshot_root	$SNAPSHOT_DIR/$container_type/$container_name
 
-ssh_args        $SSH_OPTIONS -i $SSH_RSYNC_KEY -p $SSH_RSYNC_PORT
+ssh_args	$SSH_OPTIONS -i $SSH_RSYNC_KEY -p $SSH_RSYNC_PORT
 
-retain  hourly  $retain_hourly
-retain  daily   $retain_daily
-retain  weekly  $retain_weekly
-retain  monthly $retain_monthly
+retain	hourly	$retain_hourly
+retain	daily	$retain_daily
+retain	weekly	$retain_weekly
+retain	monthly	$retain_monthly
 
-cmd_preexec     $SNAPSHOT_PREEXEC -h $ssh_host create $lv_name
-cmd_postexec    $SNAPSHOT_POSTEXEC -h $ssh_host remove $lv_name
+cmd_preexec	$SNAPSHOT_PREEXEC -h $ssh_host create $lv_name
+cmd_postexec	$SNAPSHOT_POSTEXEC -h $ssh_host remove $lv_name
 
-backup  $SSH_RSYNC_USER\@$SSH_RSYNC_PORT:$SNAPSHOT_DIR/$container_name/   $container_name/
+backup	$SSH_RSYNC_USER\@$SSH_RSYNC_PORT:$SNAPSHOT_DIR/$container_name/	$container_name/
 EOF
         close $conf_fh;
 }
