@@ -141,8 +141,8 @@ foreach my $uid (sort keys %user_db) {
 }
 
 # Generate configuration for other types
-generate_conf_file('system', 'mysql', @system_dbs) if @system_dbs;
-generate_conf_file('other', 'mysql', @other_dbs)   if @other_dbs;
+generate_conf_file('mysql', 'system', @system_dbs) if @system_dbs;
+generate_conf_file('mysql', 'other',  @other_dbs)  if @other_dbs;
 
 sub generate_conf_file {
 	my ($container_name, $container_type, @dbs) = @_;
