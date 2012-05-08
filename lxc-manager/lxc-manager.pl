@@ -73,7 +73,7 @@ Readonly my $MAG      => "\033[1;35m";   # Magenta
 Readonly my %IS_READONLY => ( user => 1, backup => 1 );
 Readonly my @MOUNT_DIRS => qw(bin dev etc root lib sbin usr var);
 my %MOUNT = (
-	home => { opts => 'noexec,nodev,nosuid' },
+	home => { opts => 'nodev,nosuid' },
 	var  => { opts => 'noexec,nodev,nosuid', bind_home_if_readonly => 1 },
 	root => { opts => 'noexec,nodev,nosuid', bind_home_if_readonly => 1 }
 );
