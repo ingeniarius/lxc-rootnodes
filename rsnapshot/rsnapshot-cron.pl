@@ -17,6 +17,7 @@ use Data::Validate::Domain qw(is_domain);
 use Smart::Comments;
 
 # Configuration
+Readonly my $RSNAPSHOT_BIN         => '/usr/bin/rsnapshot';
 Readonly my $RSNAPSHOT_ROOT_DIR    => '/home/rsnapshot';
 Readonly my $RSNAPSHOT_CONF_DIR    => '/etc/rsnapshot';
 Readonly my $SNAPSHOT_CONF_SCRIPT  => "$RSNAPSHOT_CONF_DIR/snapshot-conf.pl";
@@ -60,11 +61,16 @@ die $! if $?;
 system("$MYSQLDUMP_CONF_SCRIPT -h $ssh_host");
 die $! if $?;
 
-# Run rsnapshot 
+# Snapshot backup
 my @snapshot_conf_files = glob("$SNAPSHOT_CONF_DIR/*");
+foreach my $conf_file (@snapshot_conf_files) {
+	print "snapshot: $conf_file\n";
+	system("$RSNAPSHOT_BIN -c $conf_file $backup_level");
+}
 
-### snapshot: @snapshot_conf_files
-
+# Mysqldump backup
 my @mysqldump_conf_files = glob("$MYSQLDUMP_CONF_DIR/*");
-
-### mysqldump: @mysqldump_conf_files
+foreach my $conf_file (@mysqldump_conf_files) {
+	print "mysqldump: $conf_file\n";
+	system("$RSNAPSHOT_BIN -c $conf_file $backup_level");
+}
