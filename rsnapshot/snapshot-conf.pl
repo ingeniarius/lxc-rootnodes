@@ -11,7 +11,6 @@ use warnings;
 use strict;
 use Readonly;
 use Getopt::Long;
-use POSIX qw(isdigit);
 use File::Basename qw(basename);
 use Data::Validate::Domain qw(is_domain);
 use Smart::Comments;
@@ -45,6 +44,13 @@ Readonly my $DEFAULT_RETAIN_DAILY   => 7;
 Readonly my $DEFAULT_RETAIN_WEEKLY  => 4;
 Readonly my $DEFAULT_RETAIN_MONTHLY => 3;
 
+Readonly my $BASENAME => basename($0);
+Readonly my $USAGE    => <<END_OF_USAGE;
+Snapshot config generator
+	$BASENAME -h <hostname>
+
+END_OF_USAGE
+
 # Check paths
 -d $RSNAPSHOT_ROOT_DIR     or die "Cannot find directory \$RSNAPSHOT_ROOT_DIR ($RSNAPSHOT_ROOT_DIR).\n";
 -f $RSNAPSHOT_CONF_FILE    or die "Cannot find file \$RSNAPSHOT_CONF_FILE ($RSNAPSHOT_CONF_FILE).\n";
@@ -62,6 +68,9 @@ my $retain_hourly  = $DEFAULT_RETAIN_HOURLY;
 my $retain_daily   = $DEFAULT_RETAIN_DAILY;
 my $retain_weekly  = $DEFAULT_RETAIN_WEEKLY;
 my $retain_monthly = $DEFAULT_RETAIN_MONTHLY;
+
+# Show usage
+die $USAGE if !@ARGV;
 
 # Get options
 my $ssh_host;
