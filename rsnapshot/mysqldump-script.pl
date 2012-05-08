@@ -18,7 +18,7 @@ Readonly my $MYSQLDUMP_BIN     => '/usr/bin/mysqldump';
 Readonly my $MYSQLDUMP_OPTIONS => '--opt --default-character-set=utf8';
 Readonly my $MYSQLDUMP_SUFFIX  => 'sql.gz';
 
-Readonly my $GZIP_BIN   => '/usr/bin/gzip';
+Readonly my $GZIP_BIN   => '/bin/gzip';
 Readonly my $GZIP_LEVEL => 9;
 
 Readonly my $BASENAME => basename($0);
