@@ -119,7 +119,7 @@ foreach my $db_name (@dbs) {
 
 # Generate user configuration
 foreach my $uid (sort keys %user_db) {
-
+		
 	# Config parameters
 	my $container_name = $uid;
 	my $container_type = 'user';
@@ -129,11 +129,9 @@ foreach my $uid (sort keys %user_db) {
 	generate_conf_file($container_name, $container_type, @user_dbs);
 }
 
-# Generate system configuration
-generate_conf_file('system', 'mysql', @system_dbs);
-
-# Generate other configuration
-generate_conf_file('other', 'mysql', @other_dbs);
+# Generate configuration for other types
+generate_conf_file('system', 'mysql', @system_dbs) if @system_dbs;
+generate_conf_file('other', 'mysql', @other_dbs)   if @other_dbs;
 
 sub generate_conf_file {
 	my ($container_name, $container_type, @dbs) = @_;
