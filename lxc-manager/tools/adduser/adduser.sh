@@ -72,10 +72,10 @@ LVM_SIZE=$lvm_size lxc create $user_name $uid
 lxc start $user_name
 
 # copy /etc
-cp -pvr /lxc/template/user/rootfs/home/etc /lxc/users/$user_name/rootfs/home/
+cp -pvr /lxc/template/user/rootfs/home/etc /lxc/user/$user_name/rootfs/home/
 
 # user directory
-user_dir="/lxc/users/$user_name/rootfs/home/$user_name"
+user_dir="/lxc/user/$user_name/rootfs/home/$user_name"
 if [ ! -d $user_dir ]
 then 
 	mkdir $user_dir
@@ -87,12 +87,12 @@ then
 fi
 
 # var/log
-var_log_dir="/lxc/users/$user_name/rootfs/home/var/log"
+var_log_dir="/lxc/user/$user_name/rootfs/home/var/log"
 rm -rf -- $var_log_dir/*
 mkdir -- $var_log_dir/{apache2,nginx}
 
 # satan user key
-satan_dir="/lxc/users/$user_name/rootfs/home/etc/satan"
+satan_dir="/lxc/user/$user_name/rootfs/home/etc/satan"
 satan_key_file="$satan_dir/key"
 [ ! -d "$satan_dir" ] && mkdir -- "$satan_dir"
 chmod 711 -- "$satan_dir"
@@ -114,37 +114,37 @@ chmod 755 -- "$proxy_service_dir/run"
 # pam passwd
 perl -i -pe "s/user=.+?-passwd/user=$uid-passwd/;
 	     s/passwd=.+?\s/passwd=$pam_passwd /;" \
-/lxc/users/$user_name/rootfs/home/etc/pam.d/common-{account,session}
+/lxc/user/$user_name/rootfs/home/etc/pam.d/common-{account,session}
 
 # pam shadow
 perl -i -pe "s/user=.+?-shadow/user=$uid-shadow/; 
              s/passwd=.+?\s/passwd=$pam_shadow /;" \
-/lxc/users/$user_name/rootfs/home/etc/pam.d/common-{auth,password}
+/lxc/user/$user_name/rootfs/home/etc/pam.d/common-{auth,password}
 
 # nss passwd
 perl -i -pe "s/^users\.db_user\s*=.*$/users.db_user = $uid-passwd;/;
              s/^users\.db_password\s*=.*$/users.db_password = $pam_passwd;/;" \
-/lxc/users/$user_name/rootfs/home/etc/nss-mysql.conf
+/lxc/user/$user_name/rootfs/home/etc/nss-mysql.conf
 
 # nss shadow
 perl -i -pe "s/^shadow\.db_user\s*=.*$/shadow.db_user = $uid-shadow;/;
              s/^shadow\.db_password\s*=.*$/shadow.db_password = $pam_shadow;/;" \
-/lxc/users/$user_name/rootfs/home/etc/nss-mysql-root.conf
+/lxc/user/$user_name/rootfs/home/etc/nss-mysql-root.conf
 
 # permissions and owner for apache2 and nginx files
-find /lxc/users/$user_name/rootfs/home/etc/{apache2,nginx} -type d | xargs -i chmod 700 {}
-find /lxc/users/$user_name/rootfs/home/etc/{apache2,nginx} -type f | xargs -i chmod 600 {}
-chown -h -R $uid:$uid /lxc/users/$user_name/rootfs/home/etc/{apache2,nginx}
+find /lxc/user/$user_name/rootfs/home/etc/{apache2,nginx} -type d | xargs -i chmod 700 {}
+find /lxc/user/$user_name/rootfs/home/etc/{apache2,nginx} -type f | xargs -i chmod 600 {}
+chown -h -R $uid:$uid /lxc/user/$user_name/rootfs/home/etc/{apache2,nginx}
 
 # nginx user.conf
-nginx_user_conf_file="/lxc/users/$user_name/rootfs/home/etc/nginx/user.conf"
+nginx_user_conf_file="/lxc/user/$user_name/rootfs/home/etc/nginx/user.conf"
 [ -e "$nginx_user_conf_file" ] && rm -- "$nginx_user_conf_file"
 cat > $nginx_user_conf_file <<-EOF
 	user $user_name $user_name;
 EOF
 
 # lxc information (ip address, uid, username, type)
-lxc_dir="/lxc/users/$user_name/rootfs/home/etc/lxc"
+lxc_dir="/lxc/user/$user_name/rootfs/home/etc/lxc"
 ipaddr=$(lxc ip $uid)
 [ ! -d "$lxc_dir" ] && mkdir -- "$lxc_dir"
 
@@ -158,7 +158,7 @@ echo $ipaddr    > "$lxc_dir/ipaddr"
 echo $type      > "$lxc_dir/type"
 
 # ssmtp
-ssmtp_file="/lxc/users/$user_name/rootfs/home/etc/ssmtp/ssmtp.conf"
+ssmtp_file="/lxc/user/$user_name/rootfs/home/etc/ssmtp/ssmtp.conf"
 [ -e "$ssmtp_file" ] && rm -- "$ssmtp_file"
 cat > $ssmtp_file <<-EOF
 	#
@@ -190,7 +190,7 @@ cat > /etc/ferm/ferm.d/$uid <<EOF
 table filter {
 	chain FORWARD {
 		proto tcp destination $ipaddr dport 22 ACCEPT;
-		proto tcp destination $ipaddr dport 80 ACCEPT;
+		proto tcp destination $ipaddr dport 8080 ACCEPT;
 		proto tcp destination $ipaddr dport ${uid}0:${uid}9 ACCEPT;
 	}
 }
