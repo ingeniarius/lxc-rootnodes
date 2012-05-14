@@ -22,7 +22,7 @@ Readonly my $LVM_VG              => 'lxc';       # LVM volume group name
 Readonly my $LVM_SNAPSHOT_SUFFIX => 'snapshot';  # Suffix added to LV name 
 Readonly my $LVM_SNAPSHOT_SIZE   => '2G';        # Snapshot size
 Readonly my $LVM_SNAPSHOT_DIR    => '/snapshot'; # Snapshot mount point
-Readonly my $LV_IGNORE           => '^(?:lxc)$'; # Ignore LV regexp
+Readonly my $LV_IGNORE           => '^(?:backup)$'; # Ignore LV regexp
 
 # Terminal
 Readonly my $BASENAME => basename($0);
