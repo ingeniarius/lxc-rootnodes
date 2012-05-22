@@ -27,9 +27,9 @@ $|++;
 umask 0077;
 
 # Check paths
--f $VSFTPD_PAM_FILE or die "Vsftpd pam file not found.\n";
--d $VSFTPD_USER_DIR or die "Vsftpd user directory not found.\n";
--d $VSFTPD_LINK_DIR or die "Vsftpd link directory not found.\n";
+-f $VSFTPD_PAM_FILE or die "Vsftpd pam file \$VSFTPD_PAM_FILE ($VSFTPD_PAM_FILE) not found.\n";
+-d $VSFTPD_USER_DIR or die "Vsftpd user directory \$VSFTPD_USER_DIR ($VSFTPD_USER_DIR) not found.\n";
+-d $VSFTPD_LINK_DIR or die "Vsftpd link directory \$VSFTPD_LINK_DIR ($VSFTPD_LINK_DIR) not found.\n";
 
 # Get UID
 open my $uid_fh, '<', $LXC_UID_FILE or die "Cannot open $LXC_UID_FILE file: $!\n";
@@ -72,9 +72,12 @@ defined($db_user and $db_password) or die "Cannot find vsftpd database user and 
 # Connect to database
 my $dbh = DBI->connect("dbi:mysql:$DB_NAME:$DB_HOST:$DB_PORT", $db_user, $db_password, { RaiseError => 1, AutoCommit => 1});
 
+# Get symlinks
+my @symlink_list = glob("$VSFTPD_LINK_DIR/*");
+my %is_orphaned = map { $_ => 1 } @symlink_list;
+
 # Get users
 my $get_users = $dbh->prepare("SELECT user_name, directory, mkdir_priv, delete_priv, upload_priv, read_priv, ssl_priv FROM users WHERE uid=? AND server_name=?"); 
-
 $get_users->execute($uid, $server_name);
 while( my($user_name, $directory, $mkdir_priv, $delete_priv, $upload_priv, $read_priv, $ssl_priv) = $get_users->fetchrow_array ) {
 	# Check directory
@@ -93,6 +96,8 @@ while( my($user_name, $directory, $mkdir_priv, $delete_priv, $upload_priv, $read
 	my $file_name = "$VSFTPD_USER_DIR/$user_name";
 	open my $file_fh, '>', $file_name or die "Cannot open user file $file_name: $!\n";
 	print $file_fh <<EOF;
+pasv_min_port=${uid}1
+pasv_max_port=${uid}9
 anon_mkdir_write_enable=$mkdir_priv
 anon_other_write_enable=$delete_priv
 anon_upload_enable=$upload_priv
@@ -105,7 +110,15 @@ EOF
 	# Create symlink
 	my $symlink_file = "$VSFTPD_LINK_DIR/$user_name";
 	unlink $symlink_file;
+	delete $is_orphaned{$symlink_file};
 	symlink "$directory", "$symlink_file" or die "Cannot create symlink '$symlink_file' pointing to '$directory'\n";
+}
+
+# Remove old symlinks
+foreach my $symlink (keys %is_orphaned) {
+	next unless -d $symlink; # skip if not directory
+	next unless -l $symlink; # skip if not symlink
+	unlink $symlink;
 }
 
 # Run vsftpd
