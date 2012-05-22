@@ -74,8 +74,9 @@ my $dbh = DBI->connect("dbi:mysql:$DB_NAME:$DB_HOST:$DB_PORT", $db_user, $db_pas
 
 # Get symlinks
 my @symlink_list = glob("$VSFTPD_LINK_DIR/*");
-my %is_orphaned = map { $_ => 1 } @symlink_list;
-
+my @config_list  = glob("$VSFTPD_USER_DIR/*");
+my %is_orphaned_symlink = map { $_ => 1 } @symlink_list;
+my %is_orphaned_config  = map { $_ => 1 } @config_list;
 # Get users
 my $get_users = $dbh->prepare("SELECT user_name, directory, mkdir_priv, delete_priv, upload_priv, read_priv, ssl_priv FROM users WHERE uid=? AND server_name=?"); 
 $get_users->execute($uid, $server_name);
@@ -84,6 +85,11 @@ while( my($user_name, $directory, $mkdir_priv, $delete_priv, $upload_priv, $read
 	$directory =~ /^\//           or die "Directory '$directory' for FTP account '$user_name' must be an absolute path.\n";	
 	-d $directory                 or die "Directory '$directory' for FTP account '$user_name' not found.\n";
         (stat($directory))[4] == $uid or die "Cannot create FTP account '$user_name'. Not an owner of directory '$directory'.\n";
+
+	# Default umask
+	# File have 644 when noread priv
+	# File have 640 when   read priv
+	my $umask = $read_priv ? '0027' : '0022';
 
 	# Set privileges
 	$mkdir_priv  = $mkdir_priv  ? 'YES' : 'NO';
@@ -98,6 +104,7 @@ while( my($user_name, $directory, $mkdir_priv, $delete_priv, $upload_priv, $read
 	print $file_fh <<EOF;
 pasv_min_port=${uid}1
 pasv_max_port=${uid}9
+anon_umask=$umask
 anon_mkdir_write_enable=$mkdir_priv
 anon_other_write_enable=$delete_priv
 anon_upload_enable=$upload_priv
@@ -106,19 +113,26 @@ force_anon_data_ssl=$ssl_priv
 force_anon_logins_ssl=$ssl_priv
 EOF
 	close $file_fh;
+	delete $is_orphaned_config{$file_name};
 
 	# Create symlink
 	my $symlink_file = "$VSFTPD_LINK_DIR/$user_name";
 	unlink $symlink_file;
-	delete $is_orphaned{$symlink_file};
+	delete $is_orphaned_symlink{$symlink_file};
 	symlink "$directory", "$symlink_file" or die "Cannot create symlink '$symlink_file' pointing to '$directory'\n";
 }
 
 # Remove old symlinks
-foreach my $symlink (keys %is_orphaned) {
+foreach my $symlink (keys %is_orphaned_symlink) {
 	next unless -d $symlink; # skip if not directory
 	next unless -l $symlink; # skip if not symlink
 	unlink $symlink;
+}
+
+# Remove old config files
+foreach my $file_name (keys %is_orphaned_config) {
+	next unless -f $file_name; # skip if not file
+	unlink $file_name;
 }
 
 # Run vsftpd
