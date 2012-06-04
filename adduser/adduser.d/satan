@@ -1,0 +1,67 @@
+#!/usr/bin/perl -l
+#
+# lxc-add satan script
+# Rootnode, http://rootnode.net
+#
+# Copyright (C) 2012 Marcin Hlybin
+# All rights reserved.
+#
+# The script configures satan
+
+use warnings;
+use strict;
+use Readonly;
+
+# Configuration
+Readonly my $TEMPLATE_DIR => '/lxc/template/user/rootfs/home/etc';
+Readonly my $LXC_DIR      => '/lxc/user';
+
+# Check paths
+-d $TEMPLATE_DIR or die "\$TEMPLATE_DIR ($TEMPLATE_DIR) not found.\n";
+-d $LXC_DIR      or die "\$LXC_DIR ($LXC_DIR) not found.\n";
+
+# Get arguments
+die "Uneven number of arguments." if @ARGV % 2;
+my %arg = @ARGV;
+
+# Mandatory arguments
+my $uid         = $arg{uid}         or die "Uid not specified.";
+my $user_name   = $arg{user_name}   or die "User name not specified.";
+my $server_no   = $arg{server_no}   or die "Server number not specified.";
+my $server_type = $arg{server_type} or die "Server type not specified."; 
+my $satan_key   = $arg{satan_key}   or die "Satan key not specified.";
+
+# Create satan directory
+my $satan_dir = "$LXC_DIR/$user_name/rootfs/home/etc/satan";
+if (!-d $satan_dir) {
+	mkdir $satan_dir, 0711 or die "Cannot create directory ($satan_dir)";	
+}
+
+# Remove key file
+my $satan_key_file = "$satan_dir/key";
+unlink $satan_key_file;
+
+# Create key file
+open my $satan_key_fh, '>', $satan_key_file;
+print $satan_key_fh "$uid $satan_key";
+close $satan_key_fh;
+
+## Satan proxy
+# Create service directory
+my $proxy_service_dir = "/lxc/system/proxy/rootfs/etc/service/$uid";
+if (!-d $proxy_service_dir) {
+	mkdir $proxy_service_dir, 0700;
+}
+
+# Create service run file
+my $proxy_service_file = "$proxy_service_dir/run";
+unlink $proxy_service_file;
+open my $proxy_service_fh, '>', "$proxy_service_file" or die "Cannot open file ($proxy_service_file)";
+
+print $proxy_service_fh <<EOF;
+#!/bin/bash
+exec setuidgid satan ssh -oStrictHostKeyChecking=no -N -q -L $uid:localhost:999 satan\@$server_type$server_no.rootnode.net -p $uid
+EOF
+
+close $proxy_service_fh;
+exit;

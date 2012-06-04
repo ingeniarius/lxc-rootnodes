@@ -1,0 +1,26 @@
+# lxc-add config file
+
+default:
+    scripts:
+        - userdir
+        - satan
+        - pam
+        - lxc
+        - ferm
+        - ssmtp
+    params:
+        lvm_size: 1G
+        ssmtp_id: 11
+        vsftpd_id: 12
+web:
+    scripts:
+        - apache2
+        - nginx
+        - vsftpd
+    params: 
+        lvm_size: 6G
+app:
+    scripts:
+
+dev:
+    scripts:

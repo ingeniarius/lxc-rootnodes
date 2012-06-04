@@ -1,0 +1,87 @@
+#!/usr/bin/perl -l
+#
+# lxc-add pam script
+# Rootnode, http://rootnode.net
+#
+# Copyright (C) 2012 Marcin Hlybin
+# All rights reserved.
+#
+# The script creates pam files
+
+use warnings;
+use strict;
+use Readonly;
+use Tie::File;
+
+# Configuration
+Readonly my $LXC_DIR => '/lxc/user';
+Readonly my @PAM_TYPES => qw( account session auth password );
+
+# Check paths
+-d $LXC_DIR or die "\$LXC_DIR ($LXC_DIR) not found.\n";
+
+# Get arguments
+die "Uneven number of arguments." if @ARGV % 2;
+my %arg = @ARGV;
+
+# Mandatory arguments
+my $uid         = $arg{uid}         or die "Uid not specified.";
+my $user_name   = $arg{user_name}   or die "User name not specified.";
+my $pam_passwd  = $arg{pam_passwd}  or die "PAM passwd not specified.";
+my $pam_shadow  = $arg{pam_shadow}  or die "PAM shadow not specified.";
+
+my $etc_dir = "$LXC_DIR/$user_name/rootfs/home/etc";
+my $pam_dir = "$etc_dir/pam.d";
+
+# Alter PAM files
+foreach my $pam_type (@PAM_TYPES) {
+
+	# Set password type and password
+	my ($password_type, $password);	
+	if ($pam_type eq 'account' or $pam_type eq 'session') {
+		$password_type = 'passwd';
+		$password = $pam_passwd;
+	} 
+	elsif ($pam_type eq 'auth' or $pam_type eq 'password') {
+		$password_type = 'shadow';
+		$password = $pam_shadow;
+	}
+	else {
+		die "Unknown PAM type '$pam_type'.";
+	}
+	
+	# Check file
+	my $file_name = "$pam_dir/common-$pam_type";
+	-f $file_name or die "File $file_name not found";
+
+	# Open file
+	### $file_name
+	tie my @pam_file, 'Tie::File', $file_name;
+
+	# Alter credentials
+	for (@pam_file) {
+		s/user=.+?\s/user=$uid-$password_type /;
+		s/passwd=.+?\s/passwd=$password /;
+	}
+
+	# Close file
+	untie @pam_file;
+}
+
+# nss-passwd file
+tie my @nss_file, 'Tie::File', "$etc_dir/nss-mysql.conf";
+for (@nss_file) {
+	s/^users\.db_user\s*=.*$/users.db_user = $uid-passwd;/;
+	s/^users\.db_password\s*=.*$/users.db_password = $pam_passwd;/;
+}
+untie @nss_file;
+
+# nss-shadow file
+tie my @nss_root_file, 'Tie::File', "$etc_dir/nss-mysql-root.conf";
+for (@nss_root_file) {
+	s/^shadow\.db_user\s*=.*$/shadow.db_user = $uid-shadow;/;
+	s/^shadow\.db_password\s*=.*$/shadow.db_password = $pam_shadow;/;
+}
+untie @nss_root_file;
+
+exit;

@@ -1,0 +1,60 @@
+#!/usr/bin/perl -l
+#
+# lxc-add lxc script
+# Rootnode, http://rootnode.net
+#
+# Copyright (C) 2012 Marcin Hlybin
+# All rights reserved.
+#
+# The script adds lxc user information
+
+use warnings;
+use strict;
+use Readonly;
+use Tie::File;
+
+# Configuration
+Readonly my $LXC_DIR => '/lxc/user';
+
+# Check paths
+-d $LXC_DIR or die "\$LXC_DIR ($LXC_DIR) not found.\n";
+
+# Get arguments
+die "Uneven number of arguments." if @ARGV % 2;
+my %arg = @ARGV;
+
+# Mandatory arguments
+my $uid         = $arg{uid}         or die "Uid not specified.";
+my $user_name   = $arg{user_name}   or die "User name not specified.";
+my $server_no   = $arg{server_no}   or die "Server number not specified.";
+my $server_type = $arg{server_type} or die "Server type not specified."; 
+my $ipaddr      = $arg{ipaddr}      or die "IP address not specified.";
+
+# Create /etc/lxc directory
+my $lxc_dir = "$LXC_DIR/$user_name/rootfs/home/etc/lxc";
+if (!-d $lxc_dir) {
+	mkdir $lxc_dir, 0755 or die "Cannot create directory ($lxc_dir)";
+}
+
+sub lxc_file {
+	my ($file_type, $value) = @_;
+	my $file_name = "$lxc_dir/$file_type";
+
+	# Remove file
+	unlink $file_name;
+
+	# Create file
+	open my $fh, '>', $file_name or die "Cannot open file $file_name";
+	print $fh $value;
+	close $fh;
+
+	return;
+}
+
+# Create lxc files
+lxc_file('uid', $uid);
+lxc_file('user', $user_name);
+lxc_file('ipaddr', $ipaddr);
+lxc_file('type', $server_type);
+
+exit;

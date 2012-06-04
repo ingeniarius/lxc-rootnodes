@@ -1,0 +1,58 @@
+#!/usr/bin/perl -l
+#
+# lxc-add apache2 script
+# Rootnode, http://rootnode.net
+#
+# Copyright (C) 2012 Marcin Hlybin
+# All rights reserved.
+#
+# Apache2 configuration
+
+use warnings;
+use strict;
+use Readonly;
+
+# Configuration
+Readonly my $LXC_DIR  => '/lxc/user';
+Readonly my @DIR_LIST => qw(
+	var/run/apache2
+	var/lock/apache2
+	var/lib/apache2
+	var/log/apache2
+);
+
+# Check paths
+-d $LXC_DIR  or die "\$LXC_DIR ($LXC_DIR) not found.\n";
+
+# Get arguments
+die "Uneven number of arguments." if @ARGV % 2;
+my %arg = @ARGV;
+
+# Mandatory arguments
+my $uid         = $arg{uid}         or die "Uid not specified.";
+my $user_name   = $arg{user_name}   or die "User name not specified.";
+my $server_no   = $arg{server_no}   or die "Server number not specified.";
+my $server_type = $arg{server_type} or die "Server type not specified."; 
+my $ipaddr      = $arg{ipaddr}      or die "IP address not specified.";
+
+# Change permissions of apache2 directories
+system("find $LXC_DIR/$user_name/rootfs/home/etc/apache2 -type d | xargs -i chmod 700 {}");
+$? and die "Cannot change apache2 directory permissions: $!";
+
+# Change permissions of apache2 files
+system("find $LXC_DIR/$user_name/rootfs/home/etc/apache2 -type f | xargs -i chmod 600 {}");
+$? and die "Cannot change apache2 file permissions: $!";
+
+# Change owner of apache2 files
+system("chown -R $uid:$uid $LXC_DIR/$user_name/rootfs/home/etc/apache2");
+$? and die "Cannot change owner of apache2 files: $!";
+
+# Owner of /var directories
+foreach my $dir_name (@DIR_LIST) {
+	my $dir_path = "$LXC_DIR/$user_name/rootfs/home/$dir_name";
+	if (!-d $dir_path) {
+		mkdir $dir_path, 0700 or die "Cannot create dir '$dir_path'";
+	}
+	system("chown -R $uid:$uid $dir_path");
+	$? and die "Cannot change owner of directory '$dir_path': $!";
+}

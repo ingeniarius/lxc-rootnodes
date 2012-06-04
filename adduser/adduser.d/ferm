@@ -1,0 +1,75 @@
+#!/usr/bin/perl -l
+#
+# lxc-add firewall script
+# Rootnode, http://rootnode.net
+#
+# Copyright (C) 2012 Marcin Hlybin
+# All rights reserved.
+#
+# The script creates ferm configuration
+
+use warnings;
+use strict;
+use Readonly;
+
+# Configuration
+Readonly my $LXC_DIR  => '/lxc/user';
+Readonly my $FERM_DIR => '/etc/ferm/ferm.d'; 
+
+# Check paths
+-d $LXC_DIR  or die "\$LXC_DIR ($LXC_DIR) not found.\n";
+-d $FERM_DIR or die "\$FERM_DIR ($FERM_DIR) not found.\n";
+
+# Get arguments
+die "Uneven number of arguments." if @ARGV % 2;
+my %arg = @ARGV;
+
+# Mandatory arguments
+my $uid         = $arg{uid}         or die "Uid not specified.";
+my $user_name   = $arg{user_name}   or die "User name not specified.";
+my $server_no   = $arg{server_no}   or die "Server number not specified.";
+my $server_type = $arg{server_type} or die "Server type not specified."; 
+my $ipaddr      = $arg{ipaddr}      or die "IP address not specified.";
+
+# Remove firewall rules file
+my $ferm_file = "$FERM_DIR/$uid";
+unlink $ferm_file;
+
+# Create firewall rules file
+open my $ferm_fh, '>', $ferm_file or die "Cannot open ferm file ($ferm_file)";
+print $ferm_fh <<EOF;
+table filter {
+	chain FORWARD {
+		# Accept FTP traffic
+		proto tcp destination $ipaddr dport 21 ACCEPT;
+
+		# Accept SSH traffic
+		proto tcp destination $ipaddr dport 22 ACCEPT;
+
+		# Accept HTTP traffic
+		proto tcp destination $ipaddr dport 8080 ACCEPT;
+
+		# Accept USER traffic
+		proto tcp destination $ipaddr dport ${uid}0:${uid}9 ACCEPT;
+	}
+}
+
+table nat {
+	chain PREROUTING {
+		# Public FTP port ${uid}0
+		proto tcp destination \$PUBLIC_IP dport ${uid}0 DNAT to $ipaddr:21;
+
+		# Public SSH port $uid
+		proto tcp destination \$PUBLIC_IP dport $uid DNAT to $ipaddr:22;
+
+		# Public USER ports ${uid}1 - ${uid}9
+		proto tcp destination \$PUBLIC_IP dport ${uid}1:${uid}9 DNAT to $ipaddr:${uid}1-${uid}9;
+	}
+}
+EOF
+
+close $ferm_fh;
+
+# Restart ferm
+system("/etc/init.d/ferm restart");
+exit;

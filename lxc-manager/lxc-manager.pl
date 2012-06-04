@@ -35,6 +35,7 @@ Readonly my $SYSCTL_GRSEC_FILE => '/etc/sysctl.d/grsec.conf';         # Explicit
 # Server configuration
 Readonly my $SERVER_ID       => get_server_info('id');      # Server id
 Readonly my $SERVER_TYPE     => get_server_info('type');    # Server type, e.g. web
+Readonly my $SERVER_NO       => get_server_info('no');      # Server number, e.g. '2' for web2
 Readonly my $SERVER_DOMAIN   => get_server_info('domain');  # Server domain 
 Readonly my $SERVER_CPUS     => get_server_info('cpus');    # Number of server processors
 Readonly my $SERVER_KEY_FILE => '/root/.ssh/id_rsa.pub';    # Public SSH key for root access
@@ -107,6 +108,7 @@ Helpers:
     $BASENAME ip <id>                                show user IP address
     $BASENAME uid <name>                             show user uid
     $BASENAME id                                     show server id
+    $BASENAME type                                   show server type
     $BASENAME ssh <id|name>                          ssh into container
     $BASENAME chroot 1|0                             enable or disable chroot restrictions
     $BASENAME help                                   show usage
@@ -671,6 +673,16 @@ sub command_uid {
 	return;
 }
 
+sub command_type {
+	print "$SERVER_TYPE\n";
+	return;
+}
+
+sub command_no {
+	print "$SERVER_NO\n";
+	return;
+}
+
 sub update_etc_files {
 	my ($container_name) = @_;
 	
@@ -1009,12 +1021,17 @@ sub get_server_info {
 	}
 
 	# Get server type (e.g. web) and server domain (e.g. rootnode.net)
-	my ($server_type, $server_domain) = $HOSTNAME =~ /^(\w+?)\d+\.([\w.]+)$/;
+	my ($server_type, $server_no, $server_domain) = $HOSTNAME =~ /^(\w+?)(\d+)\.([\w.]+)$/;
 	defined ($server_type and $server_domain) or die "Cannot get server type or domain from \$HOSTNAME ($HOSTNAME)";
 
 	# Server type
 	if ($info_type eq 'type') {
 		return $server_type;
+	}
+
+	# Server no
+	if ($info_type eq 'no') {
+		return $server_no;
 	}
 
 	# Server domain
