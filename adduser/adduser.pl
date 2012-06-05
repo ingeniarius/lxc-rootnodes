@@ -43,9 +43,9 @@ Readonly my $BASENAME => basename($0);
 Readonly my $USAGE => <<END_OF_USAGE;
 Adduser script
 Usage:
-	$BASENAME signup                     
-	$BASENAME pam --uid <uid>
-	$BASENAME container --uid <uid>
+	$BASENAME signup                                  get signup data and create pam user
+	$BASENAME pam --uid <uid>                         create pam user omitting signup DB
+	$BASENAME container --uid <uid> --server <type>   create container of given type 
 END_OF_USAGE
 
 # Check configuration
