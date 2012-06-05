@@ -164,32 +164,3 @@ sub do_rollback {
 }
 
 exit;
-
-# Get credentials
-# Create container
-# Start container
-
-# Run type specific shell commands:
-## Copy files
-## Create user directory
-## Create symlinks
-## Var files and paths
-
-# Satan
-## key file
-## proxy
-## exec?
-
-# PAM files
-
-# Nginx i apache2
-
-# LXC /etc/lxc
-
-# SSMTP
-
-# Firewall
-
-# Web
-# Dev
-
