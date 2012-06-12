@@ -1,0 +1,3 @@
+#!/bin/bash
+# Nginx web server
+exec /usr/local/nginx/sbin/nginx -c /etc/nginx/nginx.conf
