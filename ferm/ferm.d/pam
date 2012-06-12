@@ -10,6 +10,7 @@ table filter {
 	chain FORWARD {
 		# Allow user connections to PAM
 		proto tcp source $LXC_NET destination $PAM_IP dport 3366 ACCEPT;
+		proto tcp source $WEB2_IP destination $PAM_IP dport 3366 ACCEPT;
 
 		# Allow replica MySQL connections to PAM MySQL database
 		proto tcp source $REPLICA_IP destination $PAM_IP dport 3366 ACCEPT;

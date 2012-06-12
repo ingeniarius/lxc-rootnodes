@@ -9,7 +9,7 @@
 table filter {
 	chain FORWARD {
 		# Allow WWW connections
-		proto tcp destination $VHOST_IP dport 80 ACCEPT;
+		proto tcp destination $VHOST_IP dport (80 81) ACCEPT;
 
 		# Allow satan SSH connections to vhost container
 		proto tcp source $SATAN_IP destination $VHOST_IP dport 22 ACCEPT;
@@ -20,6 +20,7 @@ table nat {
         chain PREROUTING {
 		# Accept WWW connections on public IP (nginx proxy)
                 proto tcp destination $PUBLIC_IP dport 80 DNAT to "$VHOST_IP:80";
+                proto tcp destination $PUBLIC_IP dport 81 DNAT to "$VHOST_IP:81";
 			
 		# Accept vhost ssh connections on public IP (satan tunnel)
                 proto tcp destination $SERVICE_IP dport 1608 DNAT to "$VHOST_IP:22";
