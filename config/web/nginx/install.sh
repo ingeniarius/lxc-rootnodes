@@ -24,3 +24,6 @@ done
 # Nginx compilation script
 [ -d "$ROOTFS/usr/src/nginx" ] || mkdir -p -m 700 "$ROOTFS/usr/src/nginx"
 cp usr/src/nginx/run.sh $ROOTFS/usr/src/nginx/
+
+# Nginx configuration
+cp -rv etc/nginx $ROOTFS/etc/

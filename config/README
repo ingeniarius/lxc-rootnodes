@@ -14,6 +14,20 @@
     ├── nginx
     │   ├── dpkg-selections
     │   ├── etc
+    │   │   ├── nginx
+    │   │   │   ├── conf.d
+    │   │   │   ├── fastcgi_params
+    │   │   │   ├── koi-utf
+    │   │   │   ├── koi-win
+    │   │   │   ├── mime.types
+    │   │   │   ├── nginx.conf
+    │   │   │   ├── sites-available
+    │   │   │   │   ├── default
+    │   │   │   │   └── proxy
+    │   │   │   ├── sites-enabled
+    │   │   │   │   ├── default -> ../sites-available/default
+    │   │   │   │   └── proxy -> ../sites-available/proxy
+    │   │   │   └── win-utf
     │   │   └── service
     │   │       ├── agent
     │   │       │   └── run
@@ -28,4 +42,4 @@
     ├── satan
     └── smtp
 
-18 directories, 10 files
+22 directories, 20 files
