@@ -1,0 +1,16 @@
+server {
+	listen 127.0.0.1:8080;
+	server_name default;
+	root /var/www;
+	
+	# Error page
+	error_page 404 /404.html;
+	location  /404.html {
+		internal;
+	}
+	
+	# Return 404 by default
+	location / {
+		return 404;
+	}
+}

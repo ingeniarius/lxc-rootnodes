@@ -1,0 +1,31 @@
+.
+├── README
+└── web
+    ├── ftp
+    ├── mysql
+    │   ├── dpkg-selections
+    │   ├── etc
+    │   │   ├── mysql
+    │   │   │   └── my.cnf
+    │   │   └── service
+    │   │       └── agent
+    │   │           └── run
+    │   └── install.sh
+    ├── nginx
+    │   ├── dpkg-selections
+    │   ├── etc
+    │   │   └── service
+    │   │       ├── agent
+    │   │       │   └── run
+    │   │       └── nginx
+    │   │           └── run
+    │   ├── install.sh
+    │   └── usr
+    │       └── src
+    │           └── nginx
+    │               └── run.sh
+    ├── proxy
+    ├── satan
+    └── smtp
+
+18 directories, 10 files
