@@ -640,21 +640,28 @@ sub command_chroot {
 
 sub command_ssh {
 	my ($container_name) = @_;
-
+	
 	# Validate arguments
 	validate_container_name($container_name);
-
+	
 	# Get container id
 	my $container_id = get_container_id($container_name);
 	defined $container_id or die "Container '$container_name' not found.\n";
 	
+	# Get container IP address
 	my $ipaddr = get_container_ip($container_id);
+	
+	# Skip container name in arguments
+	shift @ARGV;
 
+	# Show container information
 	print "Username:   $container_name\n";
 	print "UID:        $container_id\n";
 	print "Address:    $ipaddr\n";	
 	print "Running ssh...\n";
-	system ("ssh root\@$ipaddr");
+
+	# Run SSH
+	system ("ssh root\@$ipaddr @ARGV");
 	return;
 }
 
