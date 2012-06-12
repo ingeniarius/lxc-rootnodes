@@ -26,4 +26,4 @@ done
 cp usr/src/nginx/run.sh $ROOTFS/usr/src/nginx/
 
 # Nginx configuration
-cp -rv etc/nginx $ROOTFS/etc/
+cp -r etc/nginx $ROOTFS/etc/

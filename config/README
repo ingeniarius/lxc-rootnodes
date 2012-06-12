@@ -16,6 +16,7 @@
     │   ├── etc
     │   │   ├── nginx
     │   │   │   ├── conf.d
+    │   │   │   │   └── map.conf
     │   │   │   ├── fastcgi_params
     │   │   │   ├── koi-utf
     │   │   │   ├── koi-win
@@ -42,4 +43,4 @@
     ├── satan
     └── smtp
 
-22 directories, 20 files
+22 directories, 21 files
