@@ -54,4 +54,10 @@ if (-d $var_log_dir) {
 	chown 0, 0, $var_log_dir  or die "Cannot change /var/log owner";
 }
 
+# Remove lost+found directory
+my $lost_found_dir = "$LXC_DIR/$user_name/rootfs/home/lost+found";
+if (-d $lost_found_dir) {
+	remove_tree($lost_found_dir) or die "Cannot remove lost+found directory";
+}
+
 exit;

@@ -143,14 +143,14 @@ foreach my $script_name (@script_names) {
 	-f $script_file or die "Script '$script_name' not found.\n";
 	
 	# Run script
-	print "system(\"$script_file $command_args\")";
-
 	system("$script_file $command_args");
 	if ($?) {
 		do_rollback($user_name);
 		die "Cannot run task '$script_name': $!";
 	}
 }
+
+print "Finished.";
 
 sub do_rollback {
 	# Stop container

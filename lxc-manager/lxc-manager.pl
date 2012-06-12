@@ -364,8 +364,8 @@ sub command_create {
 	mount_shares($container_name, 'home');
 	
 	# Create tmp directory
-	-d 'home/tmp' or mkdir 'home/tmp', 01777 or die "Cannot create home/tmp directory";
-	symlink 'home/tmp', 'tmp'                or die "Cannot create tmp symlink";
+	-d 'home/tmp' or mkdir 'home/tmp', 1777 or die "Cannot create home/tmp directory";
+	symlink 'home/tmp', 'tmp'               or die "Cannot create tmp symlink";
 
 	# Create mount directories
 	foreach my $dir_name (@MOUNT_DIRS) {

@@ -62,6 +62,9 @@ print $proxy_service_fh <<EOF;
 #!/bin/bash
 exec setuidgid satan ssh -oStrictHostKeyChecking=no -N -q -L $uid:localhost:999 satan\@$server_type$server_no.rootnode.net -p $uid
 EOF
-
 close $proxy_service_fh;
+
+# Set run permission
+chmod 0700, $proxy_service_file or die "Cannot change permission ($proxy_service_file)";
+
 exit;

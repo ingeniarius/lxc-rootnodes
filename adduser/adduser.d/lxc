@@ -56,5 +56,6 @@ lxc_file('uid', $uid);
 lxc_file('user', $user_name);
 lxc_file('ipaddr', $ipaddr);
 lxc_file('type', $server_type);
+lxc_file('server', $server_type . $server_no);
 
 exit;

@@ -49,3 +49,17 @@ untie @vsftpd_file;
 # Create MySQL user
 ssh($vsftpd_host, qq{ mysql -Nse "GRANT SELECT ON ftp.users TO '$uid-ftp' IDENTIFIED BY '$password'" });
 ssh($vsftpd_host, qq{ mysql -Nse "FLUSH PRIVILEGES" });
+
+# Create /home/ftp directory
+my $ftp_link_dir = "$LXC_DIR/$user_name/rootfs/home/ftp";
+if (!-d $ftp_link_dir) {
+	mkdir $ftp_link_dir, 0700 or die "Cannot create ftp link directory";
+	chown 0, 0, $ftp_link_dir or die "Cannot change owner of ftp link directory";
+}
+
+# Create /var/log/vsftpd directory
+my $log_dir = "$LXC_DIR/$user_name/rootfs/home/var/log/vsftpd";
+if (!-d $log_dir) {
+	mkdir $log_dir, 0700       or die "Cannot create log directory";
+	chown $uid, $uid, $log_dir or die "Cannot change owner of log directory";
+}

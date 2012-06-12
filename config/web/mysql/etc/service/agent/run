@@ -1,0 +1,3 @@
+#!/bin/bash
+# MySQL satan agent
+exec setuidgid satan /usr/bin/perl /home/satan/prod/agent.pl mysql
