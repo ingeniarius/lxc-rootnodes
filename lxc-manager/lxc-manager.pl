@@ -658,10 +658,10 @@ sub command_ssh {
 	shift @ARGV;
 
 	# Show container information
-	print "Username:   $container_name\n";
-	print "UID:        $container_id\n";
-	print "Address:    $ipaddr\n";	
-	print "Running ssh...\n";
+	warn "Username:   $container_name\n";
+	warn "UID:        $container_id\n";
+	warn "Address:    $ipaddr\n";	
+	warn "Running ssh...\n";
 
 	# Run SSH
 	system ("ssh root\@$ipaddr @ARGV");
