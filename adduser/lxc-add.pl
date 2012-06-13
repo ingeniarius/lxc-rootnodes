@@ -150,6 +150,17 @@ foreach my $script_name (@script_names) {
 	}
 }
 
+# Reload container
+system("$LXC_BIN stop $user_name");
+if ($?) {
+	die "Cannot reload (stop) container '$user_name': $!\n";
+}	
+sleep 3;
+system("$LXC_BIN start $user_name");
+if ($?) {
+	die "Cannot reload (start) container '$user_name': $!\n";
+}
+
 print "Finished.";
 
 sub do_rollback {

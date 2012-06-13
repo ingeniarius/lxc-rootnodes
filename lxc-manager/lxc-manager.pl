@@ -531,7 +531,7 @@ sub command_template {
 	copy( $SERVER_KEY_FILE, "$template_ssh_dir/authorized_keys" ) or die "Cannot copy $SERVER_KEY_FILE";
 	
 	# Run chroot scripts
-	for ( 'chroot', $template_name, $container_type ) {
+	for ( 'chroot', $template_name ) {
 		# Add .sh suffix to script name
 		my $script_name = "$_.sh";	
 	

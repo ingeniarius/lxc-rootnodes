@@ -26,7 +26,8 @@ done
 cp usr/src/nginx/run.sh $ROOTFS/usr/src/nginx/
 
 # Nginx configuration
-cp -r etc/nginx $ROOTFS/etc/
+cp -r etc/nginx $ROOTFS/etc
+chown 999:999 $ROOTFS/etc/nginx/conf.d/map.conf
 
 # WWW files
 cp -r var/www $ROOTFS/var/
