@@ -56,3 +56,10 @@ foreach my $dir_name (@DIR_LIST) {
 	system("chown -R $uid:$uid $dir_path");
 	$? and die "Cannot change owner of directory '$dir_path': $!";
 }
+
+# Configuration symlink in ~/etc
+my $user_etc_dir = "$LXC_DIR/$user_name/rootfs/home/$user_name/etc";
+if (!-l "$user_etc_dir/apache2") {
+        my $symlink_dir = "$user_etc_dir/apache2";
+        symlink '/etc/apache2', $symlink_dir or die "Cannot create symlink $symlink_dir";
+}
