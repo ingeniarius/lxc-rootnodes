@@ -49,7 +49,9 @@ $? and die "Cannot copy etc files: $!\n";
 # Remove log files
 my $var_log_dir = "$LXC_DIR/$user_name/rootfs/home/var/log";
 if (-d $var_log_dir) {
-	remove_tree($var_log_dir) or die "Cannot remove /var/log directory";
+	system("rm -r $var_log_dir");
+	$? and die "Cannot remove /var/log/directory: $!";
+	#remove_tree($var_log_dir) or die "Cannot remove /var/log directory";
 	mkdir $var_log_dir, 0755  or die "Cannot create /var/log directory";
 	chown 0, 0, $var_log_dir  or die "Cannot change /var/log owner";
 }
