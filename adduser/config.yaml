@@ -18,7 +18,7 @@ web:
         - nginx
         - vsftpd
     params: 
-        lvm_size: 6G
+        lvm_size: 2G
 app:
     scripts:
 
