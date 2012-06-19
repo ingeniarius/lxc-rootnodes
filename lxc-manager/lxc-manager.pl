@@ -664,7 +664,7 @@ sub command_ssh {
 	warn "Running ssh...\n";
 
 	# Run SSH
-	system ("ssh root\@$ipaddr @ARGV");
+	system ("ssh -oStrictHostKeyChecking=no root\@$ipaddr @ARGV");
 	return;
 }
 
