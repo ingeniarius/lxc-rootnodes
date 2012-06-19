@@ -40,7 +40,7 @@ Readonly my $LVM_SNAPSHOT_LIST_COMMAND => "$LVM_SNAPSHOT_COMMAND list ALL";
 Readonly my $LVM_SNAPSHOT_DIR          => '/snapshot'; # Remote snapshot mount point
 
 Readonly my $DEFAULT_LV_TYPE        => 'other';
-Readonly my $DEFAULT_RETAIN_HOURLY  => 6;
+Readonly my $DEFAULT_RETAIN_HOURLY  => 0;
 Readonly my $DEFAULT_RETAIN_DAILY   => 7;
 Readonly my $DEFAULT_RETAIN_WEEKLY  => 4;
 Readonly my $DEFAULT_RETAIN_MONTHLY => 3;
